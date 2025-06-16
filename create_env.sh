@@ -15,11 +15,11 @@
 #SBATCH --mail-user hayavuzkara@davidson.edu
 
 
-conda create -n env1 python=3.7
+conda create -n env1 python=3.7 cudatoolkit=11.1 -c conda-forge
 source /opt/conda/bin/activate env1
 
 
-pip3 install torch==1.7.1 torchvision==0.8.2 torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
+pip3 install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
 
 pip3 install -r requirements.txt
 
