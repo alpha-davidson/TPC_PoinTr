@@ -1,21 +1,38 @@
-#!/usr/bin/env sh
+#!/bin/bash
+
+### Job Parameters:
+# basic info
+#SBATCH --job-name "install"               # name
+#SBATCH --output "install-out.log"      # output file
+#SBATCH --error "install-err.log"       # error message file
+
+# resource request info 
+#SBATCH --mem=32G
+#SBATCH --gres=gpu:1
+
+# Opt-into email alerts
+#SBATCH --mail-type ALL
+#SBATCH --mail-user hayavuzkara@davidson.edu
+
+source /opt/conda/bin/activate env1
+
 HOME=`pwd`
 
 # Chamfer Distance
 cd $HOME/extensions/chamfer_dist
-python setup.py install --user
+python setup.py install
 
 # NOTE: For GRNet 
 
 # Cubic Feature Sampling
 cd $HOME/extensions/cubic_feature_sampling
-python setup.py install --user
+python setup.py install
 
 # Gridding & Gridding Reverse
 cd $HOME/extensions/gridding
-python setup.py install --user
+python setup.py install
 
 # Gridding Loss
 cd $HOME/extensions/gridding_loss
-python setup.py install --user
+python setup.py install
 
