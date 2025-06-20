@@ -15,7 +15,7 @@
 #SBATCH --mail-user hayavuzkara@davidson.edu
 
 
-conda create -n env1 python=3.7 cudatoolkit=11.1 -c conda-forge
+conda create -n env1 python=3.8 cudatoolkit=11.1 -c conda-forge
 source /opt/conda/bin/activate env1
 
 

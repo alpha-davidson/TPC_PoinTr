@@ -4,7 +4,7 @@ into one numpy array per event for track completion
 
 Author: Ben Wagner
 Date Created: 12 Feb 2025
-Date Edited:  13 Feb 2025
+Date Edited:  17 Jun 2025 (Hakan Bora Yavuzkara)
 """
 
 
@@ -229,6 +229,9 @@ def sort_files(mg_path, o_path, save_path, train, val, test):
     if not os.path.exists("./test/complete"):
         os.mkdir("./test/complete")
 
+    for split in ('train', 'val', 'test'):
+        os.makedirs(f"{save_path}/{split}/complete", exist_ok=True)
+
     # Reorganize files
     for file in os.listdir(mg_path):
 
@@ -282,6 +285,9 @@ def create_partial_clouds(path, percentage_cut=0.25):
     if not os.path.exists("./test/partial"):
         os.mkdir("./test/partial")
 
+    for split in ('train', 'val', 'test'):
+        os.makedirs(f"{save_path}/{split}/partial", exist_ok=True)
+
     rng = np.random.default_rng()
 
     for split in ('/train', '/val', '/test'):
@@ -303,7 +309,7 @@ def create_partial_clouds(path, percentage_cut=0.25):
 
     return
 
-# Adjust all
+
 if __name__ == '__main__':
 
     MG_FILE_PATH = '/data/22Mg/point_clouds/simulated/output_digi_HDF_Mg22_Ne20pp_8MeV.h5'
@@ -311,15 +317,15 @@ if __name__ == '__main__':
 
     # Make sure to edit these paths accordingly, for some reason it doesn't
     # like it when ~ is used instead of /home/DAVIDSON/username
-    MG_SAVE_PATH = '/home/DAVIDSON/bewagner/TPC-SnowflakeNet/data/mg22/'
-    O_SAVE_PATH = '/home/DAVIDSON/bewagner/TPC-SnowflakeNet/data/o16/'
+    MG_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data/MG22/'
+    O_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data/O16/'
 
-    FINAL_PATH = "."
+    FINAL_PATH = "/home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data"
 
     MIN_N_POINTS = 50
-    MAX_N_POINTS = 750
+    MAX_N_POINTS = 1500
 
-    CATEGORY_FILE_PATH = '../completion/category_files/mg22_o16.json'
+    CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data/category.json"
 
     # Process
     process_file(MG_FILE_PATH, MG_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS)

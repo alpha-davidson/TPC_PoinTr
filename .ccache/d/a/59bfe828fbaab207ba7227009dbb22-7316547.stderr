@@ -1,0 +1,10 @@
+In file included from /home/DAVIDSON/hayavuzkara/.conda/envs/env1/lib/python3.8/site-packages/torch/include/ATen/Parallel.h:140,
+                 from /home/DAVIDSON/hayavuzkara/.conda/envs/env1/lib/python3.8/site-packages/torch/include/torch/csrc/api/include/torch/utils.h:3,
+                 from /home/DAVIDSON/hayavuzkara/.conda/envs/env1/lib/python3.8/site-packages/torch/include/torch/csrc/api/include/torch/nn/cloneable.h:5,
+                 from /home/DAVIDSON/hayavuzkara/.conda/envs/env1/lib/python3.8/site-packages/torch/include/torch/csrc/api/include/torch/nn.h:3,
+                 from /home/DAVIDSON/hayavuzkara/.conda/envs/env1/lib/python3.8/site-packages/torch/include/torch/csrc/api/include/torch/all.h:13,
+                 from /home/DAVIDSON/hayavuzkara/.conda/envs/env1/lib/python3.8/site-packages/torch/include/torch/extension.h:4,
+                 from gridding_cuda.cpp:10:
+/home/DAVIDSON/hayavuzkara/.conda/envs/env1/lib/python3.8/site-packages/torch/include/ATen/ParallelOpenMP.h:83: warning: ignoring #pragma omp parallel [-Wunknown-pragmas]
+ #pragma omp parallel for if ((end - begin) >= grain_size)
+ 

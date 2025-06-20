@@ -40,7 +40,7 @@ We provide pretrained AdaPoinTr models (coming soon):
 | PCN |  [[Tsinghua Cloud](https://cloud.tsinghua.edu.cn/f/b822a5979762417ba75e/?dl=1)] / [[Google Drive](https://drive.google.com/file/d/17pE2U2T2k4w1KfmDbL6U-GkEwD-duTaF/view?usp=share_link)]  / [[BaiDuYun](https://pan.baidu.com/s/1KWccgcKXVIdVo4wJAmZ_8w?pwd=rc7p)](code:rc7p)  | CD = 6.53e-3|
 ## Usage
 
-### Requirements
+### SETUP
 
 - PyTorch >= 1.7.0
 - python >= 3.7
@@ -52,21 +52,13 @@ We provide pretrained AdaPoinTr models (coming soon):
 - tensorboardX
 
 ```
-conda create -n env python=3.7
-conda activate env
-pip3 install torch==1.7.1+cu110 torchvision==0.8.2+cu110 torchaudio==0.7.2 -f https://download.pytorch.org/whl/torch_stable.html
-pip3 install -r requirements.txt
-
-```
-
-#### Building Pytorch Extensions for Chamfer Distance, PointNet++ and kNN
-
-*NOTE:* PyTorch >= 1.7 and GCC >= 4.9 are required.
-
-```
-# Chamfer Distance
+bash create_env.sh
+conda activate env1
+# For Chamfer Distance
 bash install.sh
+
 ```
+
 The solution for a common bug in chamfer distance installation can be found in Issue [#6](https://github.com/yuxumin/PoinTr/issues/6)
 ```
 # PointNet++

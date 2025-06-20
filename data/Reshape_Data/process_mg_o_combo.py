@@ -12,7 +12,7 @@ import numpy as np
 import h5py
 import sys
 from sklearn.model_selection import train_test_split
-from cutting_funcitons import center_cut, rand_cut
+from cutting_functions import center_cut, rand_cut
 sys.path.append("/data")
 
 
@@ -32,7 +32,10 @@ def process_file(file_path):
     file = h5py.File(file_path, 'r')
     keys = list(file.keys())
 
-    lengths = np.ndarray((len(keys)), dtype=int)
+    lengths = np.empty((len(keys)), dtype=int)
+    for i, j in enumerate(keys):
+        lengths[i]=len(file[j])
+    
     data = np.zeros((len(lengths), np.amax(lengths), 4), dtype=float)
 
     for idx, k in enumerate(keys):
@@ -166,16 +169,19 @@ def scale_data(data, ranges):
 
 if __name__ == '__main__':
 
+    
     SIM_MG_FILE_PATH = "/data/22Mg/point_clouds/simulated/output_digi_HDF_Mg22_Ne20pp_8MeV.h5"
     SIM_O_FILE_PATH  = "/data/16O/point_clouds/simulated/output_digi_HDF_2Body_2T.h5"
 
-    TRAIN_FEATS_SAVE_PATH = "/home/DAVIDSON/bewagner/data/22Mg_16O_combo/simulated/2048c/1536p/Mg_O_combo_train_feats.npy"
-    VAL_FEATS_SAVE_PATH = "/home/DAVIDSON/bewagner/data/22Mg_16O_combo/simulated/2048c/1536p/Mg_O_combo_val_feats.npy"
-    TEST_FEATS_SAVE_PATH = "/home/DAVIDSON/bewagner/data/22Mg_16O_combo/simulated/2048c/1536p/Mg_O_combo_test_feats.npy"
+    # Adjusted for mine
+    
+    TRAIN_FEATS_SAVE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/Mg_O_combo_train_feats.npy"
+    VAL_FEATS_SAVE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/Mg_O_combo_val_feats.npy"
+    TEST_FEATS_SAVE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/Mg_O_combo_test_feats.npy"
 
-    TRAIN_LABELS_SAVE_PATH = "/home/DAVIDSON/bewagner/data/22Mg_16O_combo/simulated/2048c/Mg_O_combo_train_labels.npy"
-    VAL_LABELS_SAVE_PATH = "/home/DAVIDSON/bewagner/data/22Mg_16O_combo/simulated/2048c/Mg_O_combo_val_labels.npy"
-    TEST_LABELS_SAVE_PATH = "/home/DAVIDSON/bewagner/data/22Mg_16O_combo/simulated/2048c/Mg_O_combo_test_labels.npy"
+    TRAIN_LABELS_SAVE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/Mg_O_combo_train_labels.npy"
+    VAL_LABELS_SAVE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/Mg_O_combo_val_labels.npy"
+    TEST_LABELS_SAVE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/Mg_O_combo_test_labels.npy"
 
     N_COMPLETE = 2048
     N_PARTIAL = 1024 + 512
@@ -215,7 +221,7 @@ if __name__ == '__main__':
     random_samp = np.ndarray((len(labels), N_PARTIAL, 4))
 
     for i, ev in enumerate(labels):
-        center[i] = center_cut(ev, (0,0), N_COMPLETE-N_PARTIAL)
+        center[i] = center_cut(ev, (0,0,N_COMPLETE-N_PARTIAL))
         random_cut[i] = rand_cut(ev, N_COMPLETE-N_PARTIAL, RNG)
         sampled = ev
         RNG.shuffle(sampled)

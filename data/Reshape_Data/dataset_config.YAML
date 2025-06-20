@@ -1,0 +1,13 @@
+type: CompletionDataset
+data_root: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_
+
+# names of the sub-folders INSIDE each split
+partial_dir: partial
+complete_dir: complete
+
+# how many points you actually saved (adjust if different)
+npoints_partial: 384
+npoints_complete: 512
+
+# the loader in this repo expects one of {'train','val','test'}
+subset:  train     # ← will get overwritten by “others: {subset: …}”

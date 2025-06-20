@@ -28,6 +28,10 @@ python setup.py install
 cd $HOME/extensions/cubic_feature_sampling
 python setup.py install
 
+# Earth Mover Distance
+cd $HOME/extensions/emd
+python setup.py install
+
 # Gridding & Gridding Reverse
 cd $HOME/extensions/gridding
 python setup.py install
@@ -35,4 +39,10 @@ python setup.py install
 # Gridding Loss
 cd $HOME/extensions/gridding_loss
 python setup.py install
+
+# PointNet2
+cd $HOME/extensions/pointnet2_ops_lib/pointnet2_ops_lib/
+python setup.py install
+
+
 

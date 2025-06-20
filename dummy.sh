@@ -1,0 +1,21 @@
+#!/bin/bash
+
+### Job Parameters:
+# basic info
+#SBATCH --job-name "install"               # name
+#SBATCH --output "install-out.log"      # output file
+#SBATCH --error "install-err.log"       # error message file
+
+# resource request info 
+#SBATCH --mem=32G
+#SBATCH --gres=gpu:1
+
+# Opt-into email alerts
+#SBATCH --mail-type ALL
+#SBATCH --mail-user hayavuzkara@davidson.edu
+
+source /opt/conda/bin/activate env1
+
+HOME=`pwd`
+
+sleep 100
