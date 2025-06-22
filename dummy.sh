@@ -17,8 +17,11 @@
 #SBATCH --constraint cuda11
 
 source /opt/conda/bin/activate env1
+which nvcc            # …/envs/env1/bin/nvcc
+nvcc --version        # release 11.3
 python - <<'PY'
-import torch, re, sys
-prop = torch.cuda.get_device_properties(0)
-print(f"CUDA capability: {prop.major}.{prop.minor}  ->  sm_{prop.major}{prop.minor}")
+import torch, subprocess, os
+print("PyTorch  CUDA:", torch.version.cuda)               # → 11.3
+print("nvcc    CUDA:", subprocess.check_output(
+      ["nvcc","--version"]).decode().split("release")[1].split(",")[0])
 PY

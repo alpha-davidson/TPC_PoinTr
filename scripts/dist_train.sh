@@ -15,6 +15,10 @@
 #SBATCH --mail-type ALL
 #SBATCH --mail-user hayavuzkara@davidson.edu
 
+
 source /opt/conda/bin/activate env1
+
+export TORCH_CUDA_ARCH_LIST="8.6"
+
 
 python main.py --config cfgs/PCN_models/AdaPoinTr.yaml --exp_name example
