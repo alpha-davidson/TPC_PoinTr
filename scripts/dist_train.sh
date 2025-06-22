@@ -9,6 +9,7 @@
 # resource request info 
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:1
+#SBATCH --constraint cuda11 
 
 # Opt-into email alerts
 #SBATCH --mail-type ALL

@@ -17,5 +17,5 @@
 # This is environment created specifically for data, with things used in the three python files installed.
 source /opt/conda/bin/activate data
 
-python process_mg_o_combo.py
-# python process_var_in_len.py1
+# python process_mg_o_combo.py
+python process_var_in_len.py

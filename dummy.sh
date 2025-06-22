@@ -2,9 +2,10 @@
 
 ### Job Parameters:
 # basic info
-#SBATCH --job-name "install"               # name
-#SBATCH --output "install-out.log"      # output file
-#SBATCH --error "install-err.log"       # error message file
+#SBATCH --job-name "dummy"               # name
+#SBATCH --output "dummy-out.log"      # output file
+#SBATCH --error "dummy-err.log"       # error message file
+
 
 # resource request info 
 #SBATCH --mem=32G
@@ -13,9 +14,11 @@
 # Opt-into email alerts
 #SBATCH --mail-type ALL
 #SBATCH --mail-user hayavuzkara@davidson.edu
+#SBATCH --constraint cuda11
 
 source /opt/conda/bin/activate env1
-
-HOME=`pwd`
-
-sleep 100
+python - <<'PY'
+import torch, re, sys
+prop = torch.cuda.get_device_properties(0)
+print(f"CUDA capability: {prop.major}.{prop.minor}  ->  sm_{prop.major}{prop.minor}")
+PY

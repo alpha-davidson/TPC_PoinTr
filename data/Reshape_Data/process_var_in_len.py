@@ -286,7 +286,7 @@ def create_partial_clouds(path, percentage_cut=0.25):
         os.mkdir("./test/partial")
 
     for split in ('train', 'val', 'test'):
-        os.makedirs(f"{save_path}/{split}/partial", exist_ok=True)
+        os.makedirs(f"{path}/{split}/partial", exist_ok=True)
 
     rng = np.random.default_rng()
 
@@ -317,15 +317,15 @@ if __name__ == '__main__':
 
     # Make sure to edit these paths accordingly, for some reason it doesn't
     # like it when ~ is used instead of /home/DAVIDSON/username
-    MG_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data/MG22/'
-    O_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data/O16/'
+    MG_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo'
+    O_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo'
 
-    FINAL_PATH = "/home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data"
+    FINAL_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo"
 
     MIN_N_POINTS = 50
     MAX_N_POINTS = 1500
 
-    CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data/category.json"
+    CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/category.json"
 
     # Process
     process_file(MG_FILE_PATH, MG_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS)
