@@ -7,16 +7,24 @@
 #SBATCH --error "install-err.log"       # error message file
 
 # resource request info
-#SBATCH --constraint cuda11
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:1
+#SBTACH --constraint cuda11 
 
 # Opt-into email alerts
 #SBATCH --mail-type ALL
 #SBATCH --mail-user hayavuzkara@davidson.edu
 
 
-source /opt/conda/bin/activate env1
+module purge
+module load CUDA/11.6.0
+
+source /opt/conda/etc/profile.d/conda.sh
+
+conda activate env1
+
+export TORCH_CUDA_ARCH_LIST="8.6"
+
 
 HOME=`pwd`
 

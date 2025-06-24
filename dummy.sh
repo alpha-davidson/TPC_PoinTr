@@ -17,11 +17,11 @@
 #SBATCH --constraint cuda11
 
 source /opt/conda/bin/activate env1
-which nvcc            # …/envs/env1/bin/nvcc
-nvcc --version        # release 11.3
 python - <<'PY'
-import torch, subprocess, os
-print("PyTorch  CUDA:", torch.version.cuda)               # → 11.3
-print("nvcc    CUDA:", subprocess.check_output(
-      ["nvcc","--version"]).decode().split("release")[1].split(",")[0])
+import torch, pointnet2_ops, chamfer, emd
+print("CUDA available ->", torch.cuda.is_available())
+print("Compiled arch   ->", torch.cuda.get_device_capability())
+print("PointNet2 ops   ->", pointnet2_ops.__version__)
+print("Chamfer OK?     ->", hasattr(chamfer, 'chamfer_distance'))
+print("EMD OK?         ->", hasattr(emd, 'emd'))
 PY
