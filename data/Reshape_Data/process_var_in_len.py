@@ -4,7 +4,7 @@ into one numpy array per event for track completion
 
 Author: Ben Wagner
 Date Created: 12 Feb 2025
-Date Edited:  17 Jun 2025 (Hakan Bora Yavuzkara)
+Date Edited:  24 Jun 2025 (Hakan Bora Yavuzkara)
 """
 
 
@@ -238,11 +238,11 @@ def sort_files(mg_path, o_path, save_path, train, val, test):
         hsh = file.split(".")[0]
 
         if hsh in train['hash']:
-            os.rename(mg_path+file, save_path+'/train/complete/'+file)
+            os.rename(os.path.join(mg_path, file), os.path.join(save_path, 'train', 'complete', file))
         elif hsh in val['hash']:
-            os.rename(mg_path+file, save_path+'/val/complete/'+file)
+            os.rename(os.path.join(mg_path, file), os.path.join(save_path, 'val', 'complete', file))
         elif hsh in test['hash']:
-            os.rename(mg_path+file, save_path+'/test/complete/'+file)
+            os.rename(os.path.join(mg_path, file), os.path.join(save_path, 'test', 'complete', file))
         else:
             raise NameError(f"Hash {hsh} not found with 22Mg files")
 
@@ -250,11 +250,11 @@ def sort_files(mg_path, o_path, save_path, train, val, test):
     
         hsh = file.split(".")[0]
         if hsh in train['hash']:
-            os.rename(o_path+file, save_path+'/train/complete/'+file)
+            os.rename(os.path.join(o_path, file), os.path.join(save_path, 'train', 'complete', file))
         elif hsh in val['hash']:
-            os.rename(o_path+file, save_path+'/val/complete/'+file)
+            os.rename(os.path.join(o_path, file), os.path.join(save_path, 'val', 'complete', file))
         elif hsh in test['hash']:
-            os.rename(o_path+file, save_path+'/test/complete/'+file)
+            os.rename(os.path.join(o_path, file), os.path.join(save_path, 'test', 'complete', file))
         else:
             raise NameError(f"Hash {hsh} not found with 16O files")
         
@@ -279,11 +279,11 @@ def create_partial_clouds(path, percentage_cut=0.25):
 
     # Ensure folders exist / create if they don't
     if not os.path.exists("./train/partial"):
-        os.mkdir("./train/partial")
+        os.makedirs(os.path.join(path,"train","partial"),exist_ok=True)
     if not os.path.exists("./val/partial"):
-        os.mkdir("./val/partial")
+        os.makedirs(os.path.join(path,"val","partial"),exist_ok=True)
     if not os.path.exists("./test/partial"):
-        os.mkdir("./test/partial")
+        os.makedirs(os.path.join(path,"test","partial"),exist_ok=True)
 
     for split in ('train', 'val', 'test'):
         os.makedirs(f"{path}/{split}/partial", exist_ok=True)
@@ -317,8 +317,8 @@ if __name__ == '__main__':
 
     # Make sure to edit these paths accordingly, for some reason it doesn't
     # like it when ~ is used instead of /home/DAVIDSON/username
-    MG_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo'
-    O_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo'
+    MG_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/Recycle/mg22'
+    O_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/Recycle/o16'
 
     FINAL_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo"
 

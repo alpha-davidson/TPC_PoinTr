@@ -17,11 +17,4 @@
 #SBATCH --constraint cuda11
 
 source /opt/conda/bin/activate env1
-python - <<'PY'
-import torch, pointnet2_ops, chamfer, emd
-print("CUDA available ->", torch.cuda.is_available())
-print("Compiled arch   ->", torch.cuda.get_device_capability())
-print("PointNet2 ops   ->", pointnet2_ops.__version__)
-print("Chamfer OK?     ->", hasattr(chamfer, 'chamfer_distance'))
-print("EMD OK?         ->", hasattr(emd, 'emd'))
-PY
+python installation_check.py

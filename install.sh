@@ -9,7 +9,8 @@
 # resource request info
 #SBATCH --mem=32G
 #SBATCH --gres=gpu:1
-#SBTACH --constraint cuda11 
+#SBATCH --constraint cuda11 
+#SBATCH --exclude alpha[0-2]
 
 # Opt-into email alerts
 #SBATCH --mail-type ALL

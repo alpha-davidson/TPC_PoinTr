@@ -14,6 +14,7 @@
 #SBATCH --mail-type ALL
 #SBATCH --mail-user hayavuzkara@davidson.edu
 #SBATCH --constraint cuda11
+#SBATCH --exclude alpha[0-2]
 
 conda create -n env1 python=3.7
 source /opt/conda/bin/activate env1

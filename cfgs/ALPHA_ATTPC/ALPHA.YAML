@@ -26,12 +26,12 @@ bnmscheduler: {
 
 # YOUR DATASET HERE
 dataset : {
-  train : { _base_: cfgs/dataset_configs/PCN.yaml, 
+  train : { _base_: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/cfgs/dataset_configs/dataset_config.YAML, 
             others: {subset: 'train'}},
-  val : { _base_: cfgs/dataset_configs/PCN.yaml, 
+  val : { _base_: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/cfgs/dataset_configs/dataset_config.YAML, 
             others: {subset: 'val'}},
-  test : { _base_: cfgs/dataset_configs/PCN.yaml, 
-            others: {subset: 'test'}}}
+  test : _base_: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/cfgs/dataset_configs/dataset_config.YAML, 
+            others: {subset: 'test'}},
             
 model : {
     NAME: AdaPoinTr, 

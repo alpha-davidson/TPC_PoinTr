@@ -64,6 +64,7 @@ model : {
   
 total_bs : 16
 step_per_update : 1
-max_epoch : 600
+# Originally at 600
+max_epoch : 50
 
 consider_metric: CDL1
