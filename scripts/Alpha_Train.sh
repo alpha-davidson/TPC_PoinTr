@@ -17,9 +17,11 @@
 #SBATCH --mail-user hayavuzkara@davidson.edu
 
 
+
+
 source /opt/conda/bin/activate env1
 
 export TORCH_CUDA_ARCH_LIST="8.6"
 
 
-python main.py --config cfgs/ALPHA_ATTPC/ALPHA.yaml --exp_name ATTPC Data
+python main.py --config cfgs/ALPHA_ATTPC/ALPHA.yaml --exp_name ATTPC

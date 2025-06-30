@@ -26,12 +26,14 @@ bnmscheduler: {
 
 # YOUR DATASET HERE
 dataset : {
-  train : { _base_: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data/dataset_config.YAML, 
-            others: {subset: 'train'}},
-  val : { _base_: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data/dataset_config.YAML, 
-            others: {subset: 'test'}},
-  test : { _base_: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/Reshape_Data/dataset_config.YAML, 
-            others: {subset: 'test'}}}
+  train : { _base_: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/cfgs/dataset_configs/ALPHA.yaml, 
+            others: {subset: 'train', bs: 8}},
+  val : { _base_: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/cfgs/dataset_configs/ALPHA.yaml, 
+            others: {subset: 'val', bs: 8}},
+  test : {_base_: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/cfgs/dataset_configs/ALPHA.yaml, 
+            others: {subset: 'test', bs: 8}}
+        }
+
             
 model : {
     NAME: AdaPoinTr, 
@@ -65,8 +67,8 @@ model : {
     }
 }
   
-total_bs : 16
+total_bs : 8
 step_per_update : 1
-max_epoch : 600
+max_epoch : 50
 
 consider_metric: CDL1

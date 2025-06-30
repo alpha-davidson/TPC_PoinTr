@@ -26,6 +26,9 @@ class ALPHA(data.Dataset):
         self.category_file = config.CATEGORY_FILE_PATH
         self.npoints = config.N_POINTS
         self.subset = config.subset
+
+        # Following is possibly wrong:
+        self.variant = getattr(config, 'VARIANT', 'rand')
     
         # Load the dataset indexing file
         self.dataset_categories = []
@@ -37,6 +40,42 @@ class ALPHA(data.Dataset):
         self.transforms = self._get_transforms(self.subset)
 
     def _get_transforms(self,subset):
+
+        #Following idea is added later:
+        common = [
+        {
+            'callback': 'UpSamplePoints',
+            'parameters': {'n_points': self.npoints},
+            'objects': ['partial', 'gt']
+        }
+        ]
+
+        if subset == 'train':
+            return data_transforms.Compose(
+                common + [
+                    {
+                        'callback': 'RandomMirrorPoints',
+                        'objects': ['partial', 'gt']
+                    },
+                    {
+                        'callback': 'ToTensor',
+                        'objects': ['partial', 'gt']
+                    }
+                ]
+            )
+        else:   # val / test
+            return data_transforms.Compose(
+                common + [
+                    {
+                        'callback': 'ToTensor',
+                        'objects': ['partial', 'gt']
+                    }
+                ]
+            )
+        
+            
+
+        """
         if subset == 'train':
             return data_transforms.Compose([{
                 'callback': 'RandomSamplePoints',
@@ -62,40 +101,39 @@ class ALPHA(data.Dataset):
                 'callback': 'ToTensor',
                 'objects': ['partial', 'gt']
             }])
+        """
 
     def _get_file_list(self,subset,n_renderings=1):
         file_list=[]
 
         for dc in self.dataset_categories:
-            print_log('Collecting files of Taxonomy [ID=%s, Name=%s]' % (dc['taxonomy_id'], dc['taxonomy_name']), logger='ALPHA')
+            experiment = dc['experiment']
+            print_log(f"Collecting files of experiment [{dc}]", logger='ALPHA')
             samples = dc[subset]
 
             for s in samples:
                 file_list.append({
-                    'taxonomy_id':
-                    dc['taxonomy_id'],
-                    'model_id':
-                    s,
-                    'partial_path': [
-                        self.partial_points_path % (subset, dc['taxonomy_id'], s, i)
-                        for i in range(n_renderings)
-                    ],
-                    'gt_path':
-                    self.complete_points_path % (subset, dc['taxonomy_id'], s),
+                    'experiment': experiment,
+                    'model_id': s,
+                    'partial_path': self.partial_points_path % (subset, s, self.variant),
+                    'gt_path': self.complete_points_path % (subset, s)
                 })
 
         print_log('Complete collecting files of the dataset. Total files: %d' % len(file_list), logger='ALPHA')
         return file_list
 
     def __getitem__(self,idx):
+        """        
         sample = self.file_list[idx]
         data = {}
         rand_idx = random.randint(0, self.n_renderings - 1) if self.subset=='train' else 0
 
         for ri in ['partial','gt']:
-                        file_path = sample['%s_path' % ri]
+            file_path = sample['%s_path' % ri]
+            
             if type(file_path) == list:
                 file_path = file_path[rand_idx]
+                
             data[ri] = IO.get(file_path).astype(np.float32)
 
         assert data['gt'].shape[0] == self.npoints
@@ -103,7 +141,27 @@ class ALPHA(data.Dataset):
         if self.transforms is not None:
             data = self.transforms(data)
 
-        return sample['taxonomy_id'], sample['model_id'], (data['partial'], data['gt'])
+        return sample['experiment'], sample['model_id'], (data['partial'], data['gt'])
+        """
+
+        sample = self.file_list[idx]
+        data = {}
+
+        
+        # [:,:3] is a temporary fix for now to make the channels line up, the other option of making it train on 4-D will also be explored.
+        data['partial'] = IO.get(sample['partial_path']).astype(np.float32)[:,:3]
+        data['gt'] = IO.get(sample['gt_path']).astype(np.float32)[:,:3]
+
+        if self.transforms is not None:
+            data = self.transforms(data)
+        
+        assert data['gt'].shape[0] == self.npoints, (
+            f"GT point count {data['gt'].shape[0]} != expected {self.npoints}")
+
+        
+        
+        return sample['experiment'], sample['model_id'], (data['partial'], data['gt'])
+
 
     def __len__(self):
         return len(self.file_list)

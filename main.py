@@ -1,3 +1,9 @@
+import torch
+# Used to choose correct memory usage
+torch.backends.cudnn.enabled = True
+torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.deterministic = True
+
 from tools import run_net
 from tools import test_net
 from utils import parser, dist_utils, misc
@@ -5,7 +11,6 @@ from utils.logger import *
 from utils.config import *
 import time
 import os
-import torch
 from tensorboardX import SummaryWriter
 
 def main():

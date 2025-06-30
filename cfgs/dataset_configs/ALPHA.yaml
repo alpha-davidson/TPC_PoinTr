@@ -1,0 +1,9 @@
+NAME: ALPHA
+CATEGORY_FILE_PATH: /home/DAVIDSON/hayavuzkara/TPC_PoinTr/data/ALPHA/category.json
+N_POINTS: 16384
+N_RENDERINGS: 8
+PARTIAL_POINTS_PATH: /home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/%s/partial/%s/%s.npy
+COMPLETE_POINTS_PATH: /home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/%s/complete/%s.npy
+# Following Necessary due to PCN Model Architecture:
+CARS: false
+# VARIANT: 

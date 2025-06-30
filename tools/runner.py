@@ -94,7 +94,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
             data_time.update(time.time() - batch_start_time)
             npoints = config.dataset.train._base_.N_POINTS
             dataset_name = config.dataset.train._base_.NAME
-            if dataset_name == 'PCN' or dataset_name == 'Completion3D' or dataset_name == 'Projected_ShapeNet':
+            if dataset_name == 'PCN' or dataset_name == 'Completion3D' or dataset_name == 'Projected_ShapeNet' or dataset_name == 'ALPHA':
                 partial = data[0].cuda()
                 gt = data[1].cuda()
                 if config.dataset.train._base_.CARS:
@@ -112,6 +112,14 @@ def run_net(args, config, train_writer=None, val_writer=None):
             num_iter += 1
            
             ret = base_model(partial)
+
+            # FOR DEBUGGING, CHECKING FOR INF AND NAN
+            for name, tensor in [('partial', partial),
+                            ('gt',      gt),
+                            ('coarse',  ret[0]),
+                            ('dense',   ret[-1])]:
+                assert not (torch.isinf(tensor).any() or torch.isnan(tensor).any()), \
+                    f'Inf/NaN detected in {name} tensor (epoch {epoch}, batch {idx})'
             
             sparse_loss, dense_loss = base_model.module.get_loss(ret, gt, epoch)
          
@@ -199,7 +207,7 @@ def validate(base_model, test_dataloader, epoch, ChamferDisL1, ChamferDisL2, val
 
             npoints = config.dataset.val._base_.N_POINTS
             dataset_name = config.dataset.val._base_.NAME
-            if dataset_name == 'PCN' or dataset_name == 'Completion3D' or dataset_name == 'Projected_ShapeNet':
+            if dataset_name == 'PCN' or dataset_name == 'Completion3D' or dataset_name == 'Projected_ShapeNet' or dataset_name == 'ALPHA':
                 partial = data[0].cuda()
                 gt = data[1].cuda()
             elif dataset_name == 'ShapeNet':
@@ -350,7 +358,7 @@ def test(base_model, test_dataloader, ChamferDisL1, ChamferDisL2, args, config, 
 
             npoints = config.dataset.test._base_.N_POINTS
             dataset_name = config.dataset.test._base_.NAME
-            if dataset_name == 'PCN' or dataset_name == 'Projected_ShapeNet':
+            if dataset_name == 'PCN' or dataset_name == 'Projected_ShapeNet' or dataset_name == 'ALPHA':
                 partial = data[0].cuda()
                 gt = data[1].cuda()
 
