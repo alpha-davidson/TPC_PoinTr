@@ -42,6 +42,7 @@ class ALPHA(data.Dataset):
     def _get_transforms(self,subset):
 
         #Following idea is added later:
+        """
         common = [
         {
             'callback': 'UpSamplePoints',
@@ -72,18 +73,25 @@ class ALPHA(data.Dataset):
                     }
                 ]
             )
-        
+        """
             
 
-        """
         if subset == 'train':
             return data_transforms.Compose([{
-                'callback': 'RandomSamplePoints',
+                'callback': 'UpSamplePoints',
                 'parameters': {
-                    'n_points': 2048
+                    'n_points': 2048 
                 },
-                'objects': ['partial']
-            }, {
+                'objects': ['partial'] # When gt, error is tensor size mismatch
+            },{
+                
+        # ADDITION FOR GT TO REACH 16384
+                
+        'callback': 'UpSamplePoints',
+        'parameters': {'n_points': self.npoints},
+        'objects': ['gt']
+                
+            },{
                 'callback': 'RandomMirrorPoints',
                 'objects': ['partial', 'gt']
             },{
@@ -97,12 +105,21 @@ class ALPHA(data.Dataset):
                     'n_points': 2048
                 },
                 'objects': ['partial']
-            }, {
+            },{
+                
+        # ADDITION FOR GT TO REACH 16384
+                
+        'callback': 'UpSamplePoints',
+        'parameters': {'n_points': self.npoints},
+        'objects': ['gt']
+                
+            },{
                 'callback': 'ToTensor',
                 'objects': ['partial', 'gt']
             }])
-        """
 
+
+            
     def _get_file_list(self,subset,n_renderings=1):
         file_list=[]
 
@@ -149,6 +166,7 @@ class ALPHA(data.Dataset):
 
         
         # [:,:3] is a temporary fix for now to make the channels line up, the other option of making it train on 4-D will also be explored.
+        
         data['partial'] = IO.get(sample['partial_path']).astype(np.float32)[:,:3]
         data['gt'] = IO.get(sample['gt_path']).astype(np.float32)[:,:3]
 

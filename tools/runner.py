@@ -98,6 +98,9 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 partial = data[0].cuda()
                 gt = data[1].cuda()
 
+
+                
+
                 # CHECK FOR DIMENSIONS:
                 B, N, C  = partial.shape
                 _, Ngt, _ = gt.shape
@@ -107,6 +110,8 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 assert torch.isfinite(partial).all(), "NaN/Inf in partial batch"
                 assert torch.isfinite(gt).all(),      "NaN/Inf in GT batch"
                 print(B,N,C,Ngt)
+
+                
                 
                 if config.dataset.train._base_.CARS:
                     if idx == 0:
