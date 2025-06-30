@@ -97,6 +97,17 @@ def run_net(args, config, train_writer=None, val_writer=None):
             if dataset_name == 'PCN' or dataset_name == 'Completion3D' or dataset_name == 'Projected_ShapeNet' or dataset_name == 'ALPHA':
                 partial = data[0].cuda()
                 gt = data[1].cuda()
+
+                # CHECK FOR DIMENSIONS:
+                B, N, C  = partial.shape
+                _, Ngt, _ = gt.shape
+                assert C == 3,                      f"Partial has {C} channels, expected 3"
+                assert N == 2048,                   f"Partial length {N}, expected 2048"
+                assert Ngt == 16384,                f"GT length {Ngt}, expected 16384"
+                assert torch.isfinite(partial).all(), "NaN/Inf in partial batch"
+                assert torch.isfinite(gt).all(),      "NaN/Inf in GT batch"
+                print(B,N,C,Ngt)
+                
                 if config.dataset.train._base_.CARS:
                     if idx == 0:
                         print_log('padding while KITTI training', logger=logger)
