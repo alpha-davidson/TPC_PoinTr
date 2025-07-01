@@ -27,6 +27,9 @@ class ALPHA(data.Dataset):
         self.npoints = config.N_POINTS
         self.subset = config.subset
 
+        #As data is normalised already
+        self.already_norm = getattr(config, 'ALREADY_NORMALISED', False)
+
         # Following is possibly wrong:
         self.variant = getattr(config, 'VARIANT', 'rand')
     

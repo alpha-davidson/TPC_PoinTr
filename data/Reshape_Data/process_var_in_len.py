@@ -18,6 +18,42 @@ sys.path.append("/data")
 sys.path.append("../")
 
 
+
+def scale_data(event, ranges):
+    """
+    ADJUST THIS PART LATER, SCALES DATA TO 0-1 scale.
+    """
+    scaled = np.empty_like(event)
+    xs, ys, zs, qs = event[:,0], event[:,1], event[:,2], event[:,3]
+
+    scaled[:,0] = (xs - ranges['MIN_X'])   / (ranges['MAX_X'] - ranges['MIN_X'])
+    scaled[:,1] = (ys - ranges['MIN_Y'])   / (ranges['MAX_Y'] - ranges['MIN_Y'])
+    scaled[:,2] = (zs - ranges['MIN_Z'])   / (ranges['MAX_Z'] - ranges['MIN_Z'])
+    scaled[:,3] = (np.log(qs) - ranges['MIN_LNQ']) / (ranges['MAX_LNQ'] - ranges['MIN_LNQ'])
+    return scaled.astype(np.float32)
+
+def get_ranges(h5_paths):
+    """
+    ADJUST THIS PART LATER, Gets the range of coordinates for each point cloud.
+    """
+    mins = np.full(4,  np.inf)
+    maxs = np.full(4, -np.inf)
+    for p in h5_paths:
+        with h5py.File(p, 'r') as f:
+            for k in f.keys():
+                arr = f[k][()]                    # (N, ≥5)
+                mins[:3] = np.minimum(mins[:3], arr[:,:3].min(0))
+                maxs[:3] = np.maximum(maxs[:3], arr[:,:3].max(0))
+                lnq = np.log(arr[:,4])
+                mins[3] = min(mins[3], lnq.min())
+                maxs[3] = max(maxs[3], lnq.max())
+    return dict(MIN_X=mins[0], MAX_X=maxs[0],
+                MIN_Y=mins[1], MAX_Y=maxs[1],
+                MIN_Z=mins[2], MAX_Z=maxs[2],
+                MIN_LNQ=mins[3], MAX_LNQ=maxs[3])
+
+
+
 def process_file(file_path, save_path, min_len, max_len):
     '''
     Turns .h5 file into individual numpy arrays for each event. 
@@ -57,8 +93,10 @@ def process_file(file_path, save_path, min_len, max_len):
             event[idx, 3] = p[4]
 
         # Save each event with a random hash
+        # Scale event also
+        scaled_event = scale_data(event, RANGES)
         name = f"{save_path}/{random.getrandbits(128):032x}.npy"
-        np.save(name, event)
+        np.save(name, scaled_event)
 
 
 def get_ttv_split(mg_path, o_path, train_split=0.6, val_split=0.2):
@@ -326,6 +364,9 @@ if __name__ == '__main__':
     MAX_N_POINTS = 1500
 
     CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/category.json"
+
+    # Standardize for each coordinates to be between 0-1
+    RANGES = get_ranges([MG_FILE_PATH, O_FILE_PATH])
 
     # Process
     process_file(MG_FILE_PATH, MG_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS)
