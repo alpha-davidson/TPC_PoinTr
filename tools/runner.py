@@ -112,6 +112,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 assert Ngt == 16384,                f"GT length {Ngt}, expected 16384"
                 assert torch.isfinite(partial).all(), "NaN/Inf in partial batch"
                 assert torch.isfinite(gt).all(),      "NaN/Inf in GT batch"
+                
                 print(B,N,C,Ngt)
 
                 
@@ -299,7 +300,13 @@ def validate(base_model, test_dataloader, epoch, ChamferDisL1, ChamferDisL2, val
             torch.cuda.synchronize()
      
     # Print testing results
-    shapenet_dict = json.load(open('./data/shapenet_synset_dict.json', 'r'))
+    # The following is before
+    
+    # shapenet_dict = json.load(open('./data/shapenet_synset_dict.json', 'r'))
+    
+    # THE FOLLOWING ARE USED FOR ALPHA
+
+    alpha_dict = json.load(open('./data/alpha_synset_dict.json', 'r'))    
     print_log('============================ TEST RESULTS ============================',logger=logger)
     msg = ''
     msg += 'Taxonomy\t'
@@ -315,7 +322,14 @@ def validate(base_model, test_dataloader, epoch, ChamferDisL1, ChamferDisL2, val
         msg += (str(category_metrics[taxonomy_id].count(0)) + '\t')
         for value in category_metrics[taxonomy_id].avg():
             msg += '%.3f \t' % value
-        msg += shapenet_dict[taxonomy_id] + '\t'
+
+        
+        # msg += shapenet_dict[taxonomy_id] + '\t'
+
+        # Changed for ALPHA
+
+        msg += alpha_dict[taxonomy_id] + '\t'
+        
         print_log(msg, logger=logger)
 
     msg = ''
@@ -454,7 +468,11 @@ def test(base_model, test_dataloader, ChamferDisL1, ChamferDisL2, args, config, 
      
 
     # Print testing results
-    shapenet_dict = json.load(open('./data/shapenet_synset_dict.json', 'r'))
+    
+    # shapenet_dict = json.load(open('./data/shapenet_synset_dict.json', 'r'))
+
+    # Version for ALPHA
+    alpha_dict = json.load(open('./data/alpha_synset_dict.json', 'r'))
     print_log('============================ TEST RESULTS ============================',logger=logger)
     msg = ''
     msg += 'Taxonomy\t'
@@ -471,7 +489,7 @@ def test(base_model, test_dataloader, ChamferDisL1, ChamferDisL2, args, config, 
         msg += (str(category_metrics[taxonomy_id].count(0)) + '\t')
         for value in category_metrics[taxonomy_id].avg():
             msg += '%.3f \t' % value
-        msg += shapenet_dict[taxonomy_id] + '\t'
+        msg += alpha_dict[taxonomy_id] + '\t'
         print_log(msg, logger=logger)
 
     msg = ''

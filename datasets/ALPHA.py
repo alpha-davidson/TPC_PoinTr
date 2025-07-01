@@ -135,6 +135,7 @@ class ALPHA(data.Dataset):
 
             for s in samples:
                 file_list.append({
+                    'taxonomy_id': experiment,
                     'experiment': experiment,
                     'model_id': s,
                     'partial_path': self.partial_points_path % (subset, s, self.variant),
@@ -183,7 +184,7 @@ class ALPHA(data.Dataset):
 
         
         
-        return sample['experiment'], sample['model_id'], (data['partial'], data['gt'])
+        return sample['taxonomy_id'], sample['model_id'], (data['partial'], data['gt'])
 
 
     def __len__(self):
