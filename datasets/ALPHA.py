@@ -30,9 +30,11 @@ class ALPHA(data.Dataset):
         #As data is normalised already
         self.already_norm = getattr(config, 'ALREADY_NORMALISED', False)
 
+        
         # Following is possibly wrong:
         self.variant = getattr(config, 'VARIANT', 'rand')
-    
+
+        
         # Load the dataset indexing file
         self.dataset_categories = []
         with open(self.category_file) as f:

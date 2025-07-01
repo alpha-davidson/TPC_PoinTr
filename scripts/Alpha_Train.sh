@@ -7,7 +7,6 @@
 #SBATCH --error "train_A-err.log"       # error message file
 
 # resource request info 
-#SBATCH --mem=32G
 #SBATCH --gres=gpu:1
 #SBATCH --constraint cuda11 
 #SBATCH --exclude alpha[0-2]

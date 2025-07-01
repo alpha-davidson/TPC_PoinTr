@@ -4,7 +4,7 @@ into one numpy array per event for track completion
 
 Author: Ben Wagner
 Date Created: 12 Feb 2025
-Date Edited:  24 Jun 2025 (Hakan Bora Yavuzkara)
+Date Edited:  30 Jun 2025 (Hakan Bora Yavuzkara)
 """
 
 
@@ -19,38 +19,19 @@ sys.path.append("../")
 
 
 
-def scale_data(event, ranges):
+def scale_data(event):
     """
-    ADJUST THIS PART LATER, SCALES DATA TO 0-1 scale.
+    x,y (-1,1)
+    z (0,4)
+    
     """
-    scaled = np.empty_like(event)
-    xs, ys, zs, qs = event[:,0], event[:,1], event[:,2], event[:,3]
+    scaled = np.empty(event.shape, dtype=np.float32)
+    xs, ys, zs = event[:,0], event[:,1], event[:,2]
 
-    scaled[:,0] = (xs - ranges['MIN_X'])   / (ranges['MAX_X'] - ranges['MIN_X'])
-    scaled[:,1] = (ys - ranges['MIN_Y'])   / (ranges['MAX_Y'] - ranges['MIN_Y'])
-    scaled[:,2] = (zs - ranges['MIN_Z'])   / (ranges['MAX_Z'] - ranges['MIN_Z'])
-    scaled[:,3] = (np.log(qs) - ranges['MIN_LNQ']) / (ranges['MAX_LNQ'] - ranges['MIN_LNQ'])
-    return scaled.astype(np.float32)
-
-def get_ranges(h5_paths):
-    """
-    ADJUST THIS PART LATER, Gets the range of coordinates for each point cloud.
-    """
-    mins = np.full(4,  np.inf)
-    maxs = np.full(4, -np.inf)
-    for p in h5_paths:
-        with h5py.File(p, 'r') as f:
-            for k in f.keys():
-                arr = f[k][()]                    # (N, ≥5)
-                mins[:3] = np.minimum(mins[:3], arr[:,:3].min(0))
-                maxs[:3] = np.maximum(maxs[:3], arr[:,:3].max(0))
-                lnq = np.log(arr[:,4])
-                mins[3] = min(mins[3], lnq.min())
-                maxs[3] = max(maxs[3], lnq.max())
-    return dict(MIN_X=mins[0], MAX_X=maxs[0],
-                MIN_Y=mins[1], MAX_Y=maxs[1],
-                MIN_Z=mins[2], MAX_Z=maxs[2],
-                MIN_LNQ=mins[3], MAX_LNQ=maxs[3])
+    scaled[:,0] = (xs)/255.0
+    scaled[:,1] = (ys)/255.0
+    scaled[:,2] = (zs)/255.0
+    return scaled
 
 
 
@@ -94,7 +75,7 @@ def process_file(file_path, save_path, min_len, max_len):
 
         # Save each event with a random hash
         # Scale event also
-        scaled_event = scale_data(event, RANGES)
+        scaled_event = scale_data(event)
         name = f"{save_path}/{random.getrandbits(128):032x}.npy"
         np.save(name, scaled_event)
 
@@ -254,6 +235,8 @@ def sort_files(mg_path, o_path, save_path, train, val, test):
     '''
 
     # Ensure folders exist / create if they don't
+    # To not create them where I run it from
+    """
     if not os.path.exists(f"./train/"):
         os.mkdir("./train")
     if not os.path.exists("./train/complete"):
@@ -266,6 +249,7 @@ def sort_files(mg_path, o_path, save_path, train, val, test):
         os.mkdir("./test")
     if not os.path.exists("./test/complete"):
         os.mkdir("./test/complete")
+    """
 
     for split in ('train', 'val', 'test'):
         os.makedirs(f"{save_path}/{split}/complete", exist_ok=True)
@@ -316,12 +300,15 @@ def create_partial_clouds(path, percentage_cut=0.25):
     '''
 
     # Ensure folders exist / create if they don't
+    # To not create them where I run it from
+    """
     if not os.path.exists("./train/partial"):
         os.makedirs(os.path.join(path,"train","partial"),exist_ok=True)
     if not os.path.exists("./val/partial"):
         os.makedirs(os.path.join(path,"val","partial"),exist_ok=True)
     if not os.path.exists("./test/partial"):
         os.makedirs(os.path.join(path,"test","partial"),exist_ok=True)
+    """
 
     for split in ('train', 'val', 'test'):
         os.makedirs(f"{path}/{split}/partial", exist_ok=True)
@@ -365,8 +352,6 @@ if __name__ == '__main__':
 
     CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/category.json"
 
-    # Standardize for each coordinates to be between 0-1
-    RANGES = get_ranges([MG_FILE_PATH, O_FILE_PATH])
 
     # Process
     process_file(MG_FILE_PATH, MG_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS)
