@@ -1,3 +1,7 @@
+"""
+Plot a single random point cloud from either partial or complete
+"""
+
 import os, random, json, numpy as np
 import matplotlib
 matplotlib.use("Agg")

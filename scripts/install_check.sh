@@ -2,13 +2,12 @@
 
 ### Job Parameters:
 # basic info
-#SBATCH --job-name "dummy"               # name
-#SBATCH --output "dummy-out.log"      # output file
-#SBATCH --error "dummy-err.log"       # error message file
+#SBATCH --job-name "check_install"               # name
+#SBATCH --output "check_install.log"      # output file
+#SBATCH --error "check_install.log"       # error message file
 
 
 # resource request info 
-#SBATCH --mem=32G
 #SBATCH --gres=gpu:1
 
 # Opt-into email alerts
@@ -17,4 +16,4 @@
 #SBATCH --constraint cuda11
 
 source /opt/conda/bin/activate env1
-python installation_check.py
+python tools/installation_check.py

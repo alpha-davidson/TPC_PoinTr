@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
-TPC_PoinTr – comprehensive CUDA-op sanity-check
-Save in repo root,   $ python sanity_check.py
+TPC_PoinTr – installation_check
+Significantly Chat-GPT generated, shouldn't be too useful mostly except for a single run of making sure installation is fine.
 """
 
 import importlib, inspect, torch, sys, textwrap
@@ -23,7 +23,6 @@ B, N = 2, 128
 p1 = torch.randn(B, N, 3, device="cuda")
 p2 = torch.randn(B, N, 3, device="cuda")
 
-# ----------------------------------------------------------------------
 def try_call(mod_name, *candidates, args=None, kwargs=None):
     """Import *mod_name* then call the first attribute that exists."""
     args   = []  if args   is None else args
@@ -43,7 +42,7 @@ def try_call(mod_name, *candidates, args=None, kwargs=None):
             return
     bad(f"{mod_name:<22} no expected symbols: {candidates}")
 
-# 1) Chamfer ----------------------------------------------------------------
+# )Chamfer
 try_call(
     "chamfer",                          # binary module
     "ChamferDistance",                  # python wrapper class
@@ -51,35 +50,35 @@ try_call(
     , args=[p1, p2]
 )
 
-# 2) EMD --------------------------------------------------------------------
+# )EMD
 try_call(
     "emd",
     "emd", "earth_mover_distance"
     , args=[p1, p2], kwargs={"eps":1e-3, "iters":5}
 )
 
-# 3) Cubic feature sampling -------------------------------------------------
+# )Cubic feature sampling
 try_call(
     "cubic_feature_sampling",
     "cubic_feature_sampling"
     , args=[p1]
 )
 
-# 4) Gridding ---------------------------------------------------------------
+# )Gridding
 try_call(
     "gridding",
     "gridding", "gridding_forward",
     args=[p1]
 )
 
-# 5) Gridding-distance ------------------------------------------------------
+# )Gridding-distance
 try_call(
     "gridding_distance",
     "gridding_distance",
     args=[p1, p2]
 )
 
-# 6) PointNet2 op (furthest-point-sample is enough) -------------------------
+# )PointNet2 op (furthest-point-sample is enough)
 try:
     from pointnet2_ops import pointnet2_utils as p2u
     _ = p2u.furthest_point_sample(p1, 64)
