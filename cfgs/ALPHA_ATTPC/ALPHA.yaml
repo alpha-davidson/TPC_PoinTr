@@ -66,9 +66,10 @@ model : {
       cross_attn_combine_style: 'concat',
     }
 }
-  
+
+# Important Parameters here
 total_bs : 8
 step_per_update : 1
-max_epoch : 50
+max_epoch : 250
 
 consider_metric: CDL1
