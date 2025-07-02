@@ -20,7 +20,7 @@ source /opt/conda/bin/activate env1
 
 export TORCH_CUDA_ARCH_LIST="8.6"
 
-python tools/
+python tools/loss_vs_epoch.py
   --config cfgs/ALPHA_ATTPC/ALPHA.yaml \
   --exp_name example \
   --ckpts experiments/ALPHA/ALPHA_ATTPC/ATTPC/ckpt-best.pth \
