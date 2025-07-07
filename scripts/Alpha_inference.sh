@@ -20,14 +20,26 @@ source /opt/conda/bin/activate env1
 
 export TORCH_CUDA_ARCH_LIST="8.6"
 
+
+# To choose random partial point cloud and its gt:
+DATA_ROOT="/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo"
+SPLIT_ROOT="${DATA_ROOT}/test" # Can change to train or val as well. I am using test for it to work with unseen data.
+COMPLETE_DIR="${SPLIT_ROOT}/complete"
+PARTIAL_DIR="${SPLIT_ROOT}/partial"
+
+# Get a random gt here:
+RAND_GT_PATH="$(find "${COMPLETE_DIR}" | shuf -n 1)"
+RAND_EVENT_NAME="$(basename "${RAND_GT_PATH}" .npy)"
+
+# Get its random partial cloud here:
+RAND_PARTIAL_PATH="${PARTIAL_DIR}/${RAND_EVENT_NAME}/down.npy" #Can be down.npy or center.npy or rand.npy
+
+
 # Inference
 python tools/inference.py cfgs/ALPHA_ATTPC/ALPHA.yaml \
   experiments/ALPHA/ALPHA_ATTPC/ATTPC/ckpt-best.pth \
-  --pc_root """demo/ALPHA""" --save_vis_img --out_pc_root inference_result/
+  --pc "${RAND_PARTIAL_PATH}" --out_pc_root "inference_result/Example_pc" --pc_name "${RAND_EVENT_NAME}"
 
-# demo/ALPHA must be adjusted to get a random or adjusted one from the dataset
-
-# Maybe run the graph from here also, considering the locations of the partial, created, and ground truth. Still done for simulated data and will be later tried on experimental data.
 
 
 # Loss vs Epoch plot
@@ -42,5 +54,8 @@ python tools/loss_vs_epoch.py \
   --output "inference_result/loss_vs_epoch.png"
 
 
-# Graph look
-python tools/graph.py
+# Graph 
+python tools/graph.py \
+  --partial_path "${RAND_PARTIAL_PATH}" \
+  --gt_path "${RAND_GT_PATH}" \
+  --predict_path "inference_result/Example_pc/${RAND_EVENT_NAME}_fine.npy"

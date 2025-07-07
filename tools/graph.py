@@ -1,5 +1,5 @@
 """
-Plot a single random point cloud from either partial or complete
+Plot a single random point cloud from partial, gt, and model prediction.
 Author: Hakan Bora Yavuzkara
 """
 
@@ -8,34 +8,42 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D 
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--partial_path', type=str, required=True,
+                    help='partial file path')
+
+parser.add_argument('--predict_path', type=str, required=True,
+                    help='predicted file path')
+
+parser.add_argument('--gt_path', type=str, required=True,
+                    help='gt file path')
+args = parser.parse_args()
 
 
+partial_path = args.partial_path
+predict_path = args.predict_path
+gt_path = args.gt_path
 
-ROOT = "/home/DAVIDSON/hayavuzkara/TPC_PoinTr"
-
-# ROOT = "/home/DAVIDSON/hayavuzkara/TPC_PoinTr/demo/ALPHA"
-
-#CAN CHANGE WHERE THE FILE IS LOCATED OR CALLED
-# MAKE IT MORE GLOBAL AND PULL FROM DATAA
-partial_path  = os.path.join(ROOT, "demo", "ALPHA", "center.npy")  # or rand/down/center any
-complete_path = os.path.join(ROOT, "inference_result", "center", "fine.npy")
-gt_path = os.path.join(ROOT, "demo", "ALPHA", "0ec2c19ffb88e3d1b4c6473dac65ce75.npy")
 
 partial  = np.load(partial_path)         
-complete = np.load(complete_path)       
+predict = np.load(predict_path)       
 gt = np.load(gt_path)
+
 print(partial.shape)
-print(complete.shape)
+print(predict.shape)
 print(gt.shape)
 print("")
 print(partial)
-print(complete)
+print(predict)
 print(gt)
 
 
 
-out_dir = os.path.join(ROOT,"inference_result")
+out_dir = "inference_result"
 os.makedirs(out_dir, exist_ok=True)
+
 
 X_MIN, X_MAX = -1,1
 Y_MIN, Y_MAX = -1,1
@@ -54,16 +62,16 @@ ax1.set_title("Partial")
 plt.savefig(os.path.join(out_dir, "partial.png"), dpi=300)
 plt.close()
 
-# Complete
+# Predict
 fig2 = plt.figure(figsize=(10,4))
 ax2 = plt.axes(projection="3d")
-ax2.scatter(complete[:, 0], complete[:, 1], complete[:, 2], s=1)
+ax2.scatter(predict[:, 0], predict[:, 1], predict[:, 2], s=1)
 ax2.set_xlim(-1,1)
 ax2.set_ylim(-1,1)
 ax2.set_zlim(0,4)
 ax2.set_box_aspect(BOX_ASPECT)
-ax2.set_title("Complete")
-plt.savefig(os.path.join(out_dir, "complete.png"), dpi=300)
+ax2.set_title("Predict")
+plt.savefig(os.path.join(out_dir, "predict.png"), dpi=300)
 plt.close()
 
 # Ground Truth
