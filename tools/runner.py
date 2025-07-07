@@ -112,8 +112,9 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 assert Ngt == 16384,                f"GT length {Ngt}, expected 16384"
                 assert torch.isfinite(partial).all(), "NaN/Inf in partial batch"
                 assert torch.isfinite(gt).all(),      "NaN/Inf in GT batch"
-                
-                print(B,N,C,Ngt)
+
+                # Debugging purposes for dimension size, etc.
+                # print(B,N,C,Ngt)
 
                 
                 

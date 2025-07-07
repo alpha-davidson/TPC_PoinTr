@@ -1,6 +1,9 @@
 ##############################################################
 # % Author: Castle
 # % Date:14/01/2023
+
+# % Edited by: Hakan Bora Yavuzkara
+# % Date:02/06/2025
 ###############################################################
 import argparse
 import os
@@ -56,6 +59,11 @@ def inference_single(model, pc_path, args, config, root=None):
         pc_file = pc_path
     # read single point cloud
     pc_ndarray = IO.get(pc_file).astype(np.float32)
+
+    # TEMPORARY CHANGE TO GET RID OF 4TH DIMENSION FOR NOW:
+    if pc_ndarray.shape[1] > 3:
+        pc_ndarray = pc_ndarray[:, :3]
+        
     # transform it according to the model 
     if config.dataset.train._base_['NAME'] == 'ShapeNet':
         # normalize it to fit the model on ShapeNet-55/34
