@@ -107,14 +107,15 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 # CHECK FOR DIMENSIONS:
                 B, N, C  = partial.shape
                 _, Ngt, _ = gt.shape
-                assert C == 4,                      f"Partial has {C} channels, expected 3"
+                # assert C == 3
+                assert C == 3,                      f"Partial has {C} channels, expected 3"
                 assert N == 2048,                   f"Partial length {N}, expected 2048"
                 assert Ngt == 16384,                f"GT length {Ngt}, expected 16384"
                 assert torch.isfinite(partial).all(), "NaN/Inf in partial batch"
                 assert torch.isfinite(gt).all(),      "NaN/Inf in GT batch"
 
                 # Debugging purposes for dimension size, etc.
-                print(B,N,C,Ngt)
+                # print(B,N,C,Ngt)
 
                 
                 

@@ -26,12 +26,13 @@ def scale_data(event):
     
     """
     scaled = np.empty(event.shape, dtype=np.float32)
-    xs, ys, zs, qs = event[:,0], event[:,1], event[:,2], event[:,3]
+    # xs, ys, zs, qs = event[:,0], event[:,1], event[:,2], event[:,3] For 4D
+    xs, ys, zs = event[:,0], event[:,1], event[:,2]
 
     scaled[:,0] = (xs)/255.0
     scaled[:,1] = (ys)/255.0
     scaled[:,2] = (zs)/255.0
-    scaled[:,3] = qs # Charge can be gotten rid of if wanted, event[:,3] and qs should be deleted from above in that case.
+    #scaled[:,3] = qs # Charge can be gotten rid of if wanted, event[:,3] and qs should be deleted from above in that case.
     return scaled
 
 
