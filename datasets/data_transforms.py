@@ -61,7 +61,8 @@ class RandomSamplePoints(object):
         ptcloud = ptcloud[choice[:self.n_points]]
 
         if ptcloud.shape[0] < self.n_points:
-            zeros = np.zeros((self.n_points - ptcloud.shape[0], 3))
+            # zeros = np.zeros((self.n_points - ptcloud.shape[0], 3))
+            zeros = np.zeros((self.n_points - ptcloud.shape[0], ptcloud.shape[1]))
             ptcloud = np.concatenate([ptcloud, zeros])
 
         return ptcloud
