@@ -176,6 +176,9 @@ class ALPHA(data.Dataset):
         data['partial'] = IO.get(sample['partial_path']).astype(np.float32)[:,:3]
         data['gt'] = IO.get(sample['gt_path']).astype(np.float32)[:,:3]
 
+        # data['partial'] = IO.get(sample['partial_path']).astype(np.float32)
+        # data['gt'] = IO.get(sample['gt_path']).astype(np.float32)
+
         if self.transforms is not None:
             data = self.transforms(data)
         
@@ -183,6 +186,8 @@ class ALPHA(data.Dataset):
             f"GT point count {data['gt'].shape[0]} != expected {self.npoints}")
 
         
+        if not np.isfinite(data['partial']).all():
+            raise ValueError(f"Non-finite value detected in {sample['partial_path']}")
         
         return sample['taxonomy_id'], sample['model_id'], (data['partial'], data['gt'])
 
