@@ -7,7 +7,6 @@
 #SBATCH --error "test-err.log"       # error message file
 
 # resource request info 
-#SBATCH --mem=32G
 #SBATCH --gres=gpu:1
 #SBATCH --constraint cuda11 
 #SBATCH --exclude alpha[0-2]
@@ -21,8 +20,8 @@ source /opt/conda/bin/activate env1
 
 export TORCH_CUDA_ARCH_LIST="8.6"
 
-python main.py \
-  --config cfgs/PCN_models/AdaPoinTr.yaml \
+python tools/loss_vs_epoch.py
+  --config cfgs/ALPHA_ATTPC/ALPHA.yaml \
   --exp_name example \
-  --ckpts experiments/AdaPoinTr/PCN_models/example/ckpt-best.pth \
+  --ckpts experiments/ALPHA/ALPHA_ATTPC/ATTPC/ckpt-best.pth \
   --test

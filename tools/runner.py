@@ -90,13 +90,33 @@ def run_net(args, config, train_writer=None, val_writer=None):
 
         base_model.train()  # set model to training mode
         n_batches = len(train_dataloader)
+
+        
+        # Change it so that wherever there is taxonomy_ids, it works with "experiment" as well.
         for idx, (taxonomy_ids, model_ids, data) in enumerate(train_dataloader):
             data_time.update(time.time() - batch_start_time)
             npoints = config.dataset.train._base_.N_POINTS
             dataset_name = config.dataset.train._base_.NAME
-            if dataset_name == 'PCN' or dataset_name == 'Completion3D' or dataset_name == 'Projected_ShapeNet':
+            if dataset_name == 'PCN' or dataset_name == 'Completion3D' or dataset_name == 'Projected_ShapeNet' or dataset_name == 'ALPHA':
                 partial = data[0].cuda()
                 gt = data[1].cuda()
+
+
+                
+
+                # CHECK FOR DIMENSIONS:
+                B, N, C  = partial.shape
+                _, Ngt, _ = gt.shape
+                assert C == 3,                      f"Partial has {C} channels, expected 3"
+                assert N == 2048,                   f"Partial length {N}, expected 2048"
+                assert Ngt == 16384,                f"GT length {Ngt}, expected 16384"
+                assert torch.isfinite(partial).all(), "NaN/Inf in partial batch"
+                assert torch.isfinite(gt).all(),      "NaN/Inf in GT batch"
+                
+                print(B,N,C,Ngt)
+
+                
+                
                 if config.dataset.train._base_.CARS:
                     if idx == 0:
                         print_log('padding while KITTI training', logger=logger)
@@ -112,6 +132,14 @@ def run_net(args, config, train_writer=None, val_writer=None):
             num_iter += 1
            
             ret = base_model(partial)
+
+            # FOR DEBUGGING, CHECKING FOR INF AND NAN
+            for name, tensor in [('partial', partial),
+                            ('gt',      gt),
+                            ('coarse',  ret[0]),
+                            ('dense',   ret[-1])]:
+                assert not (torch.isinf(tensor).any() or torch.isnan(tensor).any()), \
+                    f'Inf/NaN detected in {name} tensor (epoch {epoch}, batch {idx})'
             
             sparse_loss, dense_loss = base_model.module.get_loss(ret, gt, epoch)
          
@@ -199,7 +227,7 @@ def validate(base_model, test_dataloader, epoch, ChamferDisL1, ChamferDisL2, val
 
             npoints = config.dataset.val._base_.N_POINTS
             dataset_name = config.dataset.val._base_.NAME
-            if dataset_name == 'PCN' or dataset_name == 'Completion3D' or dataset_name == 'Projected_ShapeNet':
+            if dataset_name == 'PCN' or dataset_name == 'Completion3D' or dataset_name == 'Projected_ShapeNet' or dataset_name == 'ALPHA':
                 partial = data[0].cuda()
                 gt = data[1].cuda()
             elif dataset_name == 'ShapeNet':
@@ -272,7 +300,13 @@ def validate(base_model, test_dataloader, epoch, ChamferDisL1, ChamferDisL2, val
             torch.cuda.synchronize()
      
     # Print testing results
-    shapenet_dict = json.load(open('./data/shapenet_synset_dict.json', 'r'))
+    # The following is before
+    
+    # shapenet_dict = json.load(open('./data/shapenet_synset_dict.json', 'r'))
+    
+    # THE FOLLOWING ARE USED FOR ALPHA
+
+    alpha_dict = json.load(open('./data/alpha_synset_dict.json', 'r'))    
     print_log('============================ TEST RESULTS ============================',logger=logger)
     msg = ''
     msg += 'Taxonomy\t'
@@ -288,7 +322,14 @@ def validate(base_model, test_dataloader, epoch, ChamferDisL1, ChamferDisL2, val
         msg += (str(category_metrics[taxonomy_id].count(0)) + '\t')
         for value in category_metrics[taxonomy_id].avg():
             msg += '%.3f \t' % value
-        msg += shapenet_dict[taxonomy_id] + '\t'
+
+        
+        # msg += shapenet_dict[taxonomy_id] + '\t'
+
+        # Changed for ALPHA
+
+        msg += alpha_dict[taxonomy_id] + '\t'
+        
         print_log(msg, logger=logger)
 
     msg = ''
@@ -350,7 +391,7 @@ def test(base_model, test_dataloader, ChamferDisL1, ChamferDisL2, args, config, 
 
             npoints = config.dataset.test._base_.N_POINTS
             dataset_name = config.dataset.test._base_.NAME
-            if dataset_name == 'PCN' or dataset_name == 'Projected_ShapeNet':
+            if dataset_name == 'PCN' or dataset_name == 'Projected_ShapeNet' or dataset_name == 'ALPHA':
                 partial = data[0].cuda()
                 gt = data[1].cuda()
 
@@ -427,7 +468,11 @@ def test(base_model, test_dataloader, ChamferDisL1, ChamferDisL2, args, config, 
      
 
     # Print testing results
-    shapenet_dict = json.load(open('./data/shapenet_synset_dict.json', 'r'))
+    
+    # shapenet_dict = json.load(open('./data/shapenet_synset_dict.json', 'r'))
+
+    # Version for ALPHA
+    alpha_dict = json.load(open('./data/alpha_synset_dict.json', 'r'))
     print_log('============================ TEST RESULTS ============================',logger=logger)
     msg = ''
     msg += 'Taxonomy\t'
@@ -444,7 +489,7 @@ def test(base_model, test_dataloader, ChamferDisL1, ChamferDisL2, args, config, 
         msg += (str(category_metrics[taxonomy_id].count(0)) + '\t')
         for value in category_metrics[taxonomy_id].avg():
             msg += '%.3f \t' % value
-        msg += shapenet_dict[taxonomy_id] + '\t'
+        msg += alpha_dict[taxonomy_id] + '\t'
         print_log(msg, logger=logger)
 
     msg = ''
