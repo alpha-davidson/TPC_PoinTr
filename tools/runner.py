@@ -101,7 +101,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 partial = data[0].cuda()
                 gt = data[1].cuda()
 
-
                 
 
                 # CHECK FOR DIMENSIONS:

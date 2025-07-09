@@ -329,10 +329,16 @@ class TransformerEncoder(nn.Module):
             ))
 
     def forward(self, x, pos):
-        idx = idx = knn_point(self.k, pos, pos)
+
+        #idx = idx = knn_point(self.k, pos, pos)
+
+        # In order to only use 
+        idx = knn_point(self.k, pos[..., :3], pos[..., :3])
+        
         for _, block in enumerate(self.blocks):
             x = block(x, pos, idx=idx) 
         return x
+
 
 class TransformerDecoder(nn.Module):
     """ Transformer Decoder without hierarchical structure
@@ -358,10 +364,16 @@ class TransformerDecoder(nn.Module):
 
     def forward(self, q, v, q_pos, v_pos, denoise_length=None):
         if denoise_length is None:
-            self_attn_idx = knn_point(self.k, q_pos, q_pos)
+            
+            #self_attn_idx = knn_point(self.k, q_pos, q_pos)
+            self_attn_idx = knn_point(self.k, q_pos[...,:3], q_pos[...,:3])
+            
         else:
             self_attn_idx = None
-        cross_attn_idx = knn_point(self.k, v_pos, q_pos)
+            
+        #cross_attn_idx = knn_point(self.k, v_pos, q_pos)
+        cross_attn_idx = knn_point(self.k, v_pos[...,:3], q_pos[...,:3])
+        
         for _, block in enumerate(self.blocks):
             q = block(q, v, q_pos, v_pos, self_attn_idx=self_attn_idx, cross_attn_idx=cross_attn_idx, denoise_length=denoise_length)
         return q
@@ -541,8 +553,9 @@ class DGCNN_Grouper(nn.Module):
                                    nn.LeakyReLU(negative_slope=0.2)
                                    )
         self.num_features = 128
-    @staticmethod
+    
     """
+    @staticmethod
     def fps_downsample(coor, x, num_group):
         
         xyz = coor.transpose(1, 2).contiguous() # b, n, 3
@@ -561,9 +574,13 @@ class DGCNN_Grouper(nn.Module):
 
         return new_coor, new_x
     """
+    
+    @staticmethod
     def fps_downsample(coor_xyz, feat_with_q, num_group):
         # coor_xyz : B 3 N      (only xyz – for distances)
         # feat_with_q : B C N   (first channel can be charge)
+        coor_xyz    = coor_xyz.contiguous()
+        feat_with_q = feat_with_q.contiguous()
     
         idx = pointnet2_utils.furthest_point_sample(coor_xyz.transpose(1, 2).contiguous(), num_group)
     
@@ -638,11 +655,28 @@ class DGCNN_Grouper(nn.Module):
         # coor = xyz.transpose(-1, -2).contiguous()
         
         # Changed to work with 4D
-        coor_xyz = xyz.transpose(-1, -2).contiguous()
-        coor     = torch.cat([coor_xyz, q.transpose(-1, -2)], dim=-1)
+
+        # Following are suppressed for now due to tensor 256 and tensor 2048 mismatch
+        # coor_xyz = xyz.transpose(-1, -2).contiguous()
+        # coor     = torch.cat([coor_xyz, q.transpose(-1, -2)], dim=-1)
+
+        
         f = f.transpose(-1, -2).contiguous()
 
-        return coor, f
+        
+        # Added to include 4D
+
+        
+        coor_trans = coor.transpose(1, 2).contiguous()           # B G 3
+        idx_map    = knn_point(1,                                  # B G 1
+                               xyz.transpose(1, 2).contiguous(),
+                               coor_trans).squeeze(-1)            # B G
+        sampled_q  = torch.gather(q.transpose(1, 2).contiguous(), # B N 1 → B G 1
+                                  1, idx_map.unsqueeze(-1)).squeeze(-1)
+        coor_full  = torch.cat([coor_trans,                       # B G 3
+                                sampled_q.unsqueeze(-1)], dim=-1) # B G 4
+
+        return coor_full, f
 
 class Encoder(nn.Module):
     def __init__(self, encoder_channel):
@@ -870,15 +904,89 @@ class PCTransformer(nn.Module):
         elif isinstance(m, nn.LayerNorm):
             nn.init.constant_(m.bias, 0)
             nn.init.constant_(m.weight, 1.0)
-
+    """
     def forward(self, xyz):
         bs = xyz.size(0)
         
         coor, f = self.grouper(xyz, self.center_num) # b n c
-        pe =  self.pos_embed(coor)
+        #pe =  self.pos_embed(coor)
+
+        # Following change is made in order to match dimensions:
+        pe =  self.pos_embed(coor[...,:4])
+
+        
         x = self.input_proj(f)
 
         x = self.encoder(x + pe, coor) # b n c
+        global_feature = self.increase_dim(x) # B 1024 N 
+        global_feature = torch.max(global_feature, dim=1)[0] # B 1024
+
+        coarse = self.coarse_pred(global_feature).reshape(bs, -1, 4) # changed 3 to 4
+
+        # coarse_inp = misc.fps(xyz, self.num_query//2) # B 128 3 # Replaced because 3D
+        coarse_xyz = misc.fps(xyz[:, :, :3], self.num_query // 2)
+        idx = knn_point(1, xyz[:, :, :3], coarse_xyz).squeeze(-1)
+        coarse_q = torch.gather(xyz[:, :, 3:], 1, idx.unsqueeze(-1))
+        coarse_inp = torch.cat([coarse_xyz, coarse_q], dim=-1)
+            
+        coarse = torch.cat([coarse, coarse_inp], dim=1) # B 224+128 3?
+
+        mem = self.mem_link(x)
+
+        # query selection
+        query_ranking = self.query_ranking(coarse) # b n 1
+        idx = torch.argsort(query_ranking, dim=1, descending=True) # b n 1
+        coarse = torch.gather(coarse, 1, idx[:,:self.num_query].expand(-1, -1, coarse.size(-1)))
+
+        if self.training:
+            # add denoise task
+            # first pick some point : 64?
+
+            # Following are changed because 3D
+            # picked_points = misc.fps(xyz, 64)
+            # picked_points = misc.jitter_points(picked_points)
+
+            pick_xyz = misc.fps(xyz[:, :, :3], 64)
+            idx = knn_point(1, xyz[:, :, :3], pick_xyz).squeeze(-1)
+            pick_q = torch.gather(xyz[:, :, 3:], 1, idx.unsqueeze(-1))
+            picked_points = torch.cat([misc.jitter_points(pick_xyz), pick_q], dim=-1)
+
+            
+            coarse = torch.cat([coarse, picked_points], dim=1) # B 256+64 3?
+            denoise_length = 64     
+
+            # produce query
+            q = self.mlp_query(
+            torch.cat([
+                global_feature.unsqueeze(1).expand(-1, coarse.size(1), -1),
+                coarse], dim = -1)) # b n c
+
+            # forward decoder
+            q = self.decoder(q=q, v=mem, q_pos=coarse, v_pos=coor, denoise_length=denoise_length)
+
+            return q, coarse, denoise_length
+
+        else:
+            # produce query
+            q = self.mlp_query(
+            torch.cat([
+                global_feature.unsqueeze(1).expand(-1, coarse.size(1), -1),
+                coarse], dim = -1)) # b n c
+            
+            # forward decoder
+            q = self.decoder(q=q, v=mem, q_pos=coarse, v_pos=coor)
+
+            return q, coarse, 0
+    """
+    def forward(self, xyzq):
+        bs = xyzq.size(0)
+        
+        coor, f = self.grouper(xyzq, self.center_num) # b n c
+        pe =  self.pos_embed(coor)
+  
+        x = self.input_proj(f)
+        x = self.encoder(x + pe, coor) # b n c
+        
         global_feature = self.increase_dim(x) # B 1024 N 
         global_feature = torch.max(global_feature, dim=1)[0] # B 1024
 

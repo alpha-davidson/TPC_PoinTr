@@ -90,6 +90,7 @@ Simulated Dataset for Mg22 and O16 can be found from data/Reshape_Data.
 There, directions for data can be changed inside of process_var_in_len.py, at the bottom of the document to wherever you want to store the data.
 
 WARNING: The 3D and 4D datasets behave slightly differently. You can use the inline comments to generate either a 3D (x,y,z) or a 4D (x,y,z,q) Dataset
+Also, inside of datasets/ALPHA.py, you should get rid of the two [:,:3] that appears at the end to use 4D, include it to use 3D.
 
 ```
 bash create_data.sh
@@ -143,6 +144,8 @@ Inside of it, you can connect your partial point paths and complete point paths 
 bash scripts/Alpha_Train.sh
 ```
 At the bottom of cfgs/ALPHA_ATTPC_ALPHA.yaml, you can change the parameters of training. At least 250 epochs is recommended.
+
+KEEP ON EDITING FROM HERE:
 
 
 ### Inference

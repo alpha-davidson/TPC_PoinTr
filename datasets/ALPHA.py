@@ -173,8 +173,11 @@ class ALPHA(data.Dataset):
         
         # [:,:3] is a temporary fix for now to make the channels line up, the other option of making it train on 4-D will also be explored.
         
-        data['partial'] = IO.get(sample['partial_path']).astype(np.float32)[:,:3]
-        data['gt'] = IO.get(sample['gt_path']).astype(np.float32)[:,:3]
+        # data['partial'] = IO.get(sample['partial_path']).astype(np.float32)[:,:3]
+        # data['gt'] = IO.get(sample['gt_path']).astype(np.float32)[:,:3]
+
+        data['partial'] = IO.get(sample['partial_path']).astype(np.float32)
+        data['gt'] = IO.get(sample['gt_path']).astype(np.float32)
 
         if self.transforms is not None:
             data = self.transforms(data)
