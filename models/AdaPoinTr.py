@@ -5,6 +5,7 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F # Added for new loss
 from functools import partial, reduce
 from timm.models.layers import DropPath, trunc_normal_
 from extensions.chamfer_dist import ChamferDistanceL1
@@ -516,7 +517,9 @@ class DGCNN_Grouper(nn.Module):
         print('using group version 2')
         self.k = k
         # self.knn = KNN(k=k, transpose_mode=False)
-        self.input_trans = nn.Conv1d(3, 8, 1)
+        # self.input_trans = nn.Conv1d(3, 8, 1)
+        # Including charge
+        self.input_trans = nn.Conv1d(4, 8, 1)
 
         self.layer1 = nn.Sequential(nn.Conv2d(16, 32, kernel_size=1, bias=False),
                                    nn.GroupNorm(4, 32),
@@ -539,7 +542,9 @@ class DGCNN_Grouper(nn.Module):
                                    )
         self.num_features = 128
     @staticmethod
+    """
     def fps_downsample(coor, x, num_group):
+        
         xyz = coor.transpose(1, 2).contiguous() # b, n, 3
         fps_idx = pointnet2_utils.furthest_point_sample(xyz, num_group)
 
@@ -555,6 +560,16 @@ class DGCNN_Grouper(nn.Module):
         new_x = new_combined_x[:, 3:]
 
         return new_coor, new_x
+    """
+    def fps_downsample(coor_xyz, feat_with_q, num_group):
+        # coor_xyz : B 3 N      (only xyz – for distances)
+        # feat_with_q : B C N   (first channel can be charge)
+    
+        idx = pointnet2_utils.furthest_point_sample(coor_xyz.transpose(1, 2).contiguous(), num_group)
+    
+        new_xyz   = pointnet2_utils.gather_operation(coor_xyz, idx)            # B 3 G
+        new_feat  = pointnet2_utils.gather_operation(feat_with_q, idx)         # B C G  ← charge preserved
+        return new_xyz, new_feat
 
     def get_graph_feature(self, coor_q, x_q, coor_k, x_k):
 
@@ -594,7 +609,10 @@ class DGCNN_Grouper(nn.Module):
         '''
         x = x.transpose(-1, -2).contiguous()
 
-        coor = x
+        # Added for charge
+        xyz, q = x[:, :3, :], x[:, 3:, :]
+
+        coor = xyz
         f = self.input_trans(x)
 
         f = self.get_graph_feature(coor, f, coor, f)
@@ -617,7 +635,11 @@ class DGCNN_Grouper(nn.Module):
         f = f.max(dim=-1, keepdim=False)[0]
         coor = coor_q
 
-        coor = coor.transpose(-1, -2).contiguous()
+        # coor = xyz.transpose(-1, -2).contiguous()
+        
+        # Changed to work with 4D
+        coor_xyz = xyz.transpose(-1, -2).contiguous()
+        coor     = torch.cat([coor_xyz, q.transpose(-1, -2)], dim=-1)
         f = f.transpose(-1, -2).contiguous()
 
         return coor, f
@@ -627,7 +649,7 @@ class Encoder(nn.Module):
         super().__init__()
         self.encoder_channel = encoder_channel
         self.first_conv = nn.Sequential(
-            nn.Conv1d(3, 128, 1),
+            nn.Conv1d(4, 128, 1), #3 to 4 changed
             nn.BatchNorm1d(128),
             nn.ReLU(inplace=True),
             nn.Conv1d(128, 256, 1)
@@ -645,7 +667,7 @@ class Encoder(nn.Module):
             feature_global : B G C
         '''
         bs, g, n , _ = point_groups.shape
-        point_groups = point_groups.reshape(bs * g, n, 3)
+        point_groups = point_groups.reshape(bs * g, n, 4) #Changed 3 to 4
         # encoder
         feature = self.first_conv(point_groups.transpose(2,1))  # BG 256 n
         feature_global = torch.max(feature,dim=2,keepdim=True)[0]  # BG 256 1
@@ -662,25 +684,36 @@ class SimpleEncoder(nn.Module):
 
         self.num_features = embed_dims
 
-    def forward(self, xyz, n_group):
+    # Now instead of xyz, it is xyzq
+    def forward(self, xyzq, n_group):
         # 2048 divide into 128 * 32, overlap is needed
         if isinstance(n_group, list):
             n_group = n_group[-1] 
 
-        center = misc.fps(xyz, n_group) # B G 3
-            
-        assert center.size(1) == n_group, f'expect center to be B {n_group} 3, but got shape {center.shape}'
+        #Now added for 3d ones:
+        xyz=xyzq[:,:,:3]
+        
+        # center = misc.fps(xyz, n_group) # B G 3
+        # New center All added after
+        center_xyz = misc.fps(xyz, n_group)
+        idx_cent = knn_point(1, xyz, center_xyz).squeeze(-1)
+        center_q  = torch.gather(xyzq[:, :, 3:], 1, idx_cent.unsqueeze(-1))
+        center = torch.cat([center_xyz, center_q], dim=-1)
+
+        
+        assert center.size(1) == n_group, f'expect center to be B {n_group} 4, but got shape {center.shape}'
         
         batch_size, num_points, _ = xyz.shape
         # knn to get the neighborhood
-        idx = knn_point(self.group_size, xyz, center)
+        idx = knn_point(self.group_size, xyz, center_xyz)
         assert idx.size(1) == n_group
         assert idx.size(2) == self.group_size
         idx_base = torch.arange(0, batch_size, device=xyz.device).view(-1, 1, 1) * num_points
         idx = idx + idx_base
         idx = idx.view(-1)
-        neighborhood = xyz.view(batch_size * num_points, -1)[idx, :]
-        neighborhood = neighborhood.view(batch_size, n_group, self.group_size, 3).contiguous()
+        neighborhood = xyzq.view(batch_size * num_points, -1)[idx, :]
+        # Following 3 changed to 4 to include charge
+        neighborhood = neighborhood.view(batch_size, n_group, self.group_size, 4).contiguous()
             
         assert neighborhood.size(1) == n_group
         assert neighborhood.size(2) == self.group_size
@@ -708,7 +741,7 @@ class Fold(nn.Module):
             nn.Conv1d(hidden_dim, hidden_dim//2, 1),
             nn.BatchNorm1d(hidden_dim//2),
             nn.ReLU(inplace=True),
-            nn.Conv1d(hidden_dim//2, 3, 1),
+            nn.Conv1d(hidden_dim//2, 4, 1), # changed from 3 to 4
         )
 
         self.folding2 = nn.Sequential(
@@ -718,7 +751,7 @@ class Fold(nn.Module):
             nn.Conv1d(hidden_dim, hidden_dim//2, 1),
             nn.BatchNorm1d(hidden_dim//2),
             nn.ReLU(inplace=True),
-            nn.Conv1d(hidden_dim//2, 3, 1),
+            nn.Conv1d(hidden_dim//2, 4, 1), # changed from 3 to 4
         )
 
     def forward(self, x):
@@ -739,7 +772,7 @@ class SimpleRebuildFCLayer(nn.Module):
         super().__init__()
         self.input_dims = input_dims
         self.step = step
-        self.layer = Mlp(self.input_dims, hidden_dim, step * 3)
+        self.layer = Mlp(self.input_dims, hidden_dim, step * 4) # Changed from 3 to 4
 
     def forward(self, rec_feature):
         '''
@@ -753,7 +786,7 @@ class SimpleRebuildFCLayer(nn.Module):
                 g_feature.unsqueeze(1).expand(-1, token_feature.size(1), -1),
                 token_feature
             ], dim = -1)
-        rebuild_pc = self.layer(patch_feature).reshape(batch_size, -1, self.step , 3)
+        rebuild_pc = self.layer(patch_feature).reshape(batch_size, -1, self.step , 4) # Changed from 3 to 4
         assert rebuild_pc.size(1) == rec_feature.size(1)
         return rebuild_pc
 
@@ -767,7 +800,10 @@ class PCTransformer(nn.Module):
         self.encoder_type = config.encoder_type
         assert self.encoder_type in ['graph', 'pn'], f'unexpected encoder_type {self.encoder_type}'
 
-        in_chans = 3
+        # in_chans = 3
+        # To inclue charge
+        in_chans = 4
+        
         self.num_query = query_num = config.num_query
         global_feature_dim = config.global_feature_dim
 
@@ -798,10 +834,10 @@ class PCTransformer(nn.Module):
         self.coarse_pred = nn.Sequential(
             nn.Linear(global_feature_dim, 1024),
             nn.GELU(),
-            nn.Linear(1024, 3 * query_num)
+            nn.Linear(1024, 4 * query_num) # Changed to 4 from 3
         )
         self.mlp_query = nn.Sequential(
-            nn.Linear(global_feature_dim + 3, 1024),
+            nn.Linear(global_feature_dim + 4, 1024), # Changed to 4 from 3
             nn.GELU(),
             nn.Linear(1024, 1024),
             nn.GELU(),
@@ -816,7 +852,7 @@ class PCTransformer(nn.Module):
         self.decoder = PointTransformerDecoderEntry(decoder_config)
  
         self.query_ranking = nn.Sequential(
-            nn.Linear(3, 256),
+            nn.Linear(4, 256), # Changed to 4 from 3
             nn.GELU(),
             nn.Linear(256, 256),
             nn.GELU(),
@@ -837,6 +873,7 @@ class PCTransformer(nn.Module):
 
     def forward(self, xyz):
         bs = xyz.size(0)
+        
         coor, f = self.grouper(xyz, self.center_num) # b n c
         pe =  self.pos_embed(coor)
         x = self.input_proj(f)
@@ -845,9 +882,14 @@ class PCTransformer(nn.Module):
         global_feature = self.increase_dim(x) # B 1024 N 
         global_feature = torch.max(global_feature, dim=1)[0] # B 1024
 
-        coarse = self.coarse_pred(global_feature).reshape(bs, -1, 3)
+        coarse = self.coarse_pred(global_feature).reshape(bs, -1, 4) # changed 3 to 4
 
-        coarse_inp = misc.fps(xyz, self.num_query//2) # B 128 3
+        # coarse_inp = misc.fps(xyz, self.num_query//2) # B 128 3 # Replaced because 3D
+        coarse_xyz = misc.fps(xyz[:, :, :3], self.num_query // 2)
+        idx = knn_point(1, xyz[:, :, :3], coarse_xyz).squeeze(-1)
+        coarse_q = torch.gather(xyz[:, :, 3:], 1, idx.unsqueeze(-1))
+        coarse_inp = torch.cat([coarse_xyz, coarse_q], dim=-1)
+            
         coarse = torch.cat([coarse, coarse_inp], dim=1) # B 224+128 3?
 
         mem = self.mem_link(x)
@@ -860,8 +902,17 @@ class PCTransformer(nn.Module):
         if self.training:
             # add denoise task
             # first pick some point : 64?
-            picked_points = misc.fps(xyz, 64)
-            picked_points = misc.jitter_points(picked_points)
+
+            # Following are changed because 3D
+            # picked_points = misc.fps(xyz, 64)
+            # picked_points = misc.jitter_points(picked_points)
+
+            pick_xyz = misc.fps(xyz[:, :, :3], 64)
+            idx = knn_point(1, xyz[:, :, :3], pick_xyz).squeeze(-1)
+            pick_q = torch.gather(xyz[:, :, 3:], 1, idx.unsqueeze(-1))
+            picked_points = torch.cat([misc.jitter_points(pick_xyz), pick_q], dim=-1)
+
+            
             coarse = torch.cat([coarse, picked_points], dim=1) # B 256+64 3?
             denoise_length = 64     
 
@@ -921,7 +972,7 @@ class AdaPoinTr(nn.Module):
             nn.LeakyReLU(negative_slope=0.2),
             nn.Conv1d(1024, 1024, 1)
         )
-        self.reduce_map = nn.Linear(self.trans_dim + 1027, self.trans_dim)
+        self.reduce_map = nn.Linear(self.trans_dim + 1028, self.trans_dim) # Changed from 1027 to 1028
         self.build_loss_func()
 
     def build_loss_func(self):
@@ -933,51 +984,73 @@ class AdaPoinTr(nn.Module):
         assert pred_fine.size(1) == gt.size(1)
 
         # denoise loss
-        idx = knn_point(self.factor, gt, denoised_coarse) # B n k 
+        idx = knn_point(self.factor, gt[:,:,:3], denoised_coarse[:,:,:3]) # B n k # Added [:,:,:3]
         denoised_target = index_points(gt, idx) # B n k 3 
-        denoised_target = denoised_target.reshape(gt.size(0), -1, 3)
+        denoised_target = denoised_target.reshape(gt.size(0), -1, 4) # Changed to 4
+        
         assert denoised_target.size(1) == denoised_fine.size(1)
-        loss_denoised = self.loss_func(denoised_fine, denoised_target)
-        loss_denoised = loss_denoised * 0.5
+
+        # These are changed
+        # loss_denoised = self.loss_func(denoised_fine, denoised_target)
+        # loss_denoised = loss_denoised * 0.5
+        
+        charge_weight=1 # can be changed
+        
+        loss_denoised_xyz = self.loss_func(denoised_fine[:, :, :3], denoised_target[:, :, :3])
+        loss_denoised_q = F.l1_loss(denoised_fine[:, :, 3], denoised_target[:, :, 3])
+        loss_denoised = 0.5*(loss_denoised_xyz + charge_weight * loss_denoised_q)
 
         # recon loss
-        loss_coarse = self.loss_func(pred_coarse, gt)
-        loss_fine = self.loss_func(pred_fine, gt)
-        loss_recon = loss_coarse + loss_fine
+        # Coarse
+        loss_coarse_xyz = self.loss_func(pred_coarse[:,:,:3], gt[:,:,:3]) # Added [:,:,:3], 
+        loss_coarse_q = F.l1_loss(pred_coarse[:, :, 3],  gt[:, :, 3])
+        
+        loss_fine_xyz = self.loss_func(pred_fine[:,:,:3], gt[:,:,:3])
+        loss_fine_q = F.l1_loss(pred_fine[:, :, 3],   gt[:, :, 3])
+        
+        loss_recon = (loss_coarse_xyz + loss_fine_xyz + charge_weight*(loss_coarse_q + loss_fine_q))
 
         return loss_denoised, loss_recon
 
-    def forward(self, xyz):
-        q, coarse_point_cloud, denoise_length = self.base_model(xyz) # B M C and B M 3
+    # def forwward(self,xyz):
+    def forward(self, xyzq):
+        q, coarse_point_cloud, denoise_length = self.base_model(xyzq) # B M C and B M 3
     
-        B, M ,C = q.shape
+        B, M, _ = q.shape
 
-        global_feature = self.increase_dim(q.transpose(1,2)).transpose(1,2) # B M 1024
-        global_feature = torch.max(global_feature, dim=1)[0] # B 1024
+        
+        #global_feature = self.increase_dim(q.transpose(1,2)).transpose(1,2) # B M 1024
+        #global_feature = torch.max(global_feature, dim=1)[0] # B 1024
 
+        # Added new
+        global_feature = self.increase_dim(q.transpose(1, 2)).transpose(1, 2).max(1)[0]
+        
         rebuild_feature = torch.cat([
-            global_feature.unsqueeze(-2).expand(-1, M, -1),
+            global_feature.unsqueeze(1).expand(-1, M, -1),
             q,
             coarse_point_cloud], dim=-1)  # B M 1027 + C
+
+        # Added later
+        rebuild_feature = self.reduce_map(rebuild_feature)
 
         
         # NOTE: foldingNet
         if self.decoder_type == 'fold':
             rebuild_feature = self.reduce_map(rebuild_feature.reshape(B*M, -1)) # BM C
-            relative_xyz = self.decode_head(rebuild_feature).reshape(B, M, 3, -1)    # B M 3 S
-            rebuild_points = (relative_xyz + coarse_point_cloud.unsqueeze(-1)).transpose(2,3)  # B M S 3
+            relative_xyz = self.decode_head(rebuild_feature).reshape(B, M, 4, -1)    # B M 4 S # Changed from 3 to 4
+            rebuild_points = (relative_xyz + coarse_point_cloud.unsqueeze(-1)).transpose(2,3)  # B M S 4
 
         else:
             rebuild_feature = self.reduce_map(rebuild_feature) # B M C
-            relative_xyz = self.decode_head(rebuild_feature)   # B M S 3
-            rebuild_points = (relative_xyz + coarse_point_cloud.unsqueeze(-2))  # B M S 3
+            relative_xyz = self.decode_head(rebuild_feature)   # B M S 4
+            rebuild_points = (relative_xyz + coarse_point_cloud.unsqueeze(-2))  # B M S 4
 
         if self.training:
             # split the reconstruction and denoise task
-            pred_fine = rebuild_points[:, :-denoise_length].reshape(B, -1, 3).contiguous()
+            pred_fine = rebuild_points[:, :-denoise_length].reshape(B, -1, 4).contiguous() # Changed from 3 to 4
             pred_coarse = coarse_point_cloud[:, :-denoise_length].contiguous()
 
-            denoised_fine = rebuild_points[:, -denoise_length:].reshape(B, -1, 3).contiguous()
+            denoised_fine = rebuild_points[:, -denoise_length:].reshape(B, -1, 4).contiguous() # Changed from 3 to 4
             denoised_coarse = coarse_point_cloud[:, -denoise_length:].contiguous()
 
             assert pred_fine.size(1) == self.num_query * self.factor
@@ -988,7 +1061,7 @@ class AdaPoinTr(nn.Module):
 
         else:
             assert denoise_length == 0
-            rebuild_points = rebuild_points.reshape(B, -1, 3).contiguous()  # B N 3
+            rebuild_points = rebuild_points.reshape(B, -1, 4).contiguous()  # B N 4 # Changed from 3 to 4
 
             assert rebuild_points.size(1) == self.num_query * self.factor
             assert coarse_point_cloud.size(1) == self.num_query

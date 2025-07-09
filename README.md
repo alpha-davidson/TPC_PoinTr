@@ -30,6 +30,8 @@ We provide pretrained PoinTr models:
 | PCN_new |  [[Tsinghua Cloud](https://cloud.tsinghua.edu.cn/f/444d34a062354c6ead68/?dl=1)] / [[Google Drive](https://drive.google.com/file/d/1qKhPKNf6o0jWnki5d0MGXQtBbgBSDIYo/view?usp=sharing)]  / [[BaiDuYun](https://pan.baidu.com/s/1RHsGXABzz7rbcq4syhg1hA)] (code:aru3 ) |CD = 7.26e-3|
 | KITTI | [[Tsinghua Cloud](https://cloud.tsinghua.edu.cn/f/734011f0b3574ab58cff/?dl=1)] / [[Google Drive](https://drive.google.com/file/d/1oPwXplvn9mR0dI9V7Xjw4RhGwrnBU4dg/view?usp=sharing)]  / [[BaiDuYun](https://pan.baidu.com/s/11FZsE7c0em2SxGVUIRYzyg)] (code:99om) | MMD = 5.04e-4 |
 
+
+
 We provide pretrained AdaPoinTr models (coming soon):
 | dataset  | url| performance |
 | --- | --- |  --- |
@@ -40,17 +42,21 @@ We provide pretrained AdaPoinTr models (coming soon):
 | PCN |  [[Tsinghua Cloud](https://cloud.tsinghua.edu.cn/f/b822a5979762417ba75e/?dl=1)] / [[Google Drive](https://drive.google.com/file/d/17pE2U2T2k4w1KfmDbL6U-GkEwD-duTaF/view?usp=share_link)]  / [[BaiDuYun](https://pan.baidu.com/s/1KWccgcKXVIdVo4wJAmZ_8w?pwd=rc7p)](code:rc7p)  | CD = 6.53e-3|
 ## Usage
 
+# TPC_AdaPoinTr: Track Completion for Broken AT-TPC Tracks from Mg22 and O16 Data
+
+Inside of all script files, the mailing address can be changed to make sure that the scripts are running.
+Files/Folders named after ALPHA should be mostly what you are looking for.
+
 ### SETUP
 
 - PyTorch >= 1.7.0
 - python >= 3.7
-- CUDA >= 9.0
+- CUDA == 11.6
 - GCC >= 4.9 
 - torchvision
 - timm
 - open3d
 - tensorboardX
-
 ```
 bash create_env.sh
 conda activate env1
@@ -79,7 +85,65 @@ That will fix the `ModuleNotFoundError`.
 
 ### Dataset
 
-The details of our new ***ShapeNet-55/34*** datasets and other existing datasets can be found in [DATASET.md](./DATASET.md).
+Simulated Dataset for Mg22 and O16 can be found from data/Reshape_Data.
+
+There, directions for data can be changed inside of process_var_in_len.py, at the bottom of the document to wherever you want to store the data.
+
+WARNING: The 3D and 4D datasets behave slightly differently. You can use the inline comments to generate either a 3D (x,y,z) or a 4D (x,y,z,q) Dataset
+
+```
+bash create_data.sh
+```
+
+The DataSet should be in the following form:
+```
+│FOLDER/
+├──train/
+│  ├── complete
+│  │   ├── NAME1.npy
+│  │   ├── .......
+│  ├── partial
+│  │   ├── NAME1
+│  │   │   ├── rand.npy
+│  │   │   ├── down.npy
+│  │   │   ├── .......
+│  │   ├── .......
+├──train/
+│  ├── complete
+│  │   ├── NAME2.npy
+│  │   ├── .......
+│  ├── partial
+│  │   ├── NAME2
+│  │   │   ├── rand.npy
+│  │   │   ├── down.npy
+│  │   │   ├── .......
+│  │   ├── .......
+├──train/
+│  ├── complete
+│  │   ├── NAME3.npy
+│  │   ├── .......
+│  ├── partial
+│  │   ├── NAME3
+│  │   │   ├── rand.npy
+│  │   │   ├── down.npy
+│  │   │   ├── .......
+│  │   ├── .......
+├──category.json
+```
+Category should include taxonomy_ids(experiment) and all the names of train, val, test files.
+
+### Connecting Data
+Go to cfgs/ALPHA_ATTPC/ALPHA.yaml
+There, you can find the other yaml file which the actual dataset is connected to, that one can be found in cfgs/dataset_configs/ALPHA.yaml
+Inside of it, you can connect your partial point paths and complete point paths from wherever you saved the data.
+
+### To Train a Model with the DataSet
+
+```
+bash scripts/Alpha_Train.sh
+```
+At the bottom of cfgs/ALPHA_ATTPC_ALPHA.yaml, you can change the parameters of training. At least 250 epochs is recommended.
+
 
 ### Inference
 

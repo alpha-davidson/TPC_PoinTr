@@ -26,11 +26,14 @@ def scale_data(event):
     
     """
     scaled = np.empty(event.shape, dtype=np.float32)
-    xs, ys, zs = event[:,0], event[:,1], event[:,2]
+    # xs, ys, zs = event[:,0], event[:,1], event[:,2]
+    xs, ys, zs, qs = event[:,0], event[:,1], event[:,2], event[:,3]
 
     scaled[:,0] = (xs)/255.0
     scaled[:,1] = (ys)/255.0
     scaled[:,2] = (zs)/255.0
+    # Get rid of this to exclude charge
+    scaled[:,3] = qs
     return scaled
 
 
@@ -71,7 +74,7 @@ def process_file(file_path, save_path, min_len, max_len):
             event[idx, 0] = p[0]
             event[idx, 1] = p[1]
             event[idx, 2] = p[2]
-            event[idx, 3] = p[4]
+            event[idx, 3] = p[4] # Get rid of this to exclude charge
 
         # Save each event with a random hash
         # Scale event also
