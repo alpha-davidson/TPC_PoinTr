@@ -7,6 +7,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F # Added for new loss
 from functools import partial, reduce
+
+from utils.geometry import knn_point, square_distance, furthest_point_sample
+
 from timm.models.layers import DropPath, trunc_normal_
 from extensions.chamfer_dist import ChamferDistanceL1
 from .build import MODELS, build_model_from_cfg
