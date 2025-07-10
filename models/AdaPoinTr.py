@@ -80,7 +80,7 @@ class SelfAttnBlockApi(nn.Module):
                     global_attn_feat = self.attn(norm_x)
                     feature_list.append(global_attn_feat)
                 if self.local_attn is not None:
-                    local_attn_feat = self.local_attn(norm_x, pos, idx=idx)
+                    local_attn_feat = self.local_attn(norm_x, pos[...,:3], idx=idx) # [...,:3] added to not have charge in distance related.
                     feature_list.append(local_attn_feat)
                 # combine
                 if len(feature_list) == 2:
@@ -91,7 +91,7 @@ class SelfAttnBlockApi(nn.Module):
                     raise RuntimeError()
             else: # onebyone
                 x = x + self.drop_path1(self.ls1(self.attn(self.norm1(x))))
-                x = x + self.drop_path3(self.ls3(self.local_attn(self.norm3(x), pos, idx=idx)))
+                x = x + self.drop_path3(self.ls3(self.local_attn(self.norm3(x), pos[...,:3], idx=idx))) # [...,:3] added to not have charge in distance
 
         elif self.block_length == 1:
             norm_x = self.norm1(x)
@@ -99,7 +99,7 @@ class SelfAttnBlockApi(nn.Module):
                 global_attn_feat = self.attn(norm_x)
                 feature_list.append(global_attn_feat)
             if self.local_attn is not None:
-                local_attn_feat = self.local_attn(norm_x, pos, idx=idx)
+                local_attn_feat = self.local_attn(norm_x, pos[...,:3], idx=idx) # [...,:3] added to not have charge in distance
                 feature_list.append(local_attn_feat)
             # combine
             if len(feature_list) == 1:
@@ -241,7 +241,8 @@ class CrossAttnBlockApi(nn.Module):
                     global_attn_feat = self.self_attn(norm_q, mask=mask)
                     feature_list.append(global_attn_feat)
                 if self.local_self_attn is not None:
-                    local_attn_feat = self.local_self_attn(norm_q, q_pos, idx=self_attn_idx, denoise_length=denoise_length)
+                    # [...,:3] added to not have charge in distance
+                    local_attn_feat = self.local_self_attn(norm_q, q_pos[...,:3], idx=self_attn_idx, denoise_length=denoise_length) 
                     feature_list.append(local_attn_feat)
                 # combine
                 if len(feature_list) == 2:
@@ -252,7 +253,7 @@ class CrossAttnBlockApi(nn.Module):
                     raise RuntimeError()
             else: # onebyone
                 q = q + self.drop_path1(self.ls1(self.self_attn(self.norm1(q), mask=mask)))
-                q = q + self.drop_path3(self.ls3(self.local_self_attn(self.norm3(q), q_pos, idx=self_attn_idx, denoise_length=denoise_length)))
+                q = q + self.drop_path3(self.ls3(self.local_self_attn(self.norm3(q), q_pos[...,:3], idx=self_attn_idx, denoise_length=denoise_length))) # [...,:3] added to not have charge in distance
 
         elif self.self_attn_block_length == 1:
             norm_q = self.norm1(q)
@@ -260,7 +261,7 @@ class CrossAttnBlockApi(nn.Module):
                 global_attn_feat = self.self_attn(norm_q, mask=mask)
                 feature_list.append(global_attn_feat)
             if self.local_self_attn is not None:
-                local_attn_feat = self.local_self_attn(norm_q, q_pos, idx=self_attn_idx, denoise_length=denoise_length)
+                local_attn_feat = self.local_self_attn(norm_q, q_pos[...,:3], idx=self_attn_idx, denoise_length=denoise_length) # [...,:3] added to not have charge in distance
                 feature_list.append(local_attn_feat)
             # combine
             if len(feature_list) == 1:
@@ -280,7 +281,8 @@ class CrossAttnBlockApi(nn.Module):
                     global_attn_feat = self.cross_attn(norm_q, norm_v)
                     feature_list.append(global_attn_feat)
                 if self.local_cross_attn is not None:
-                    local_attn_feat = self.local_cross_attn(q=norm_q, v=norm_v, q_pos=q_pos, v_pos=v_pos, idx=cross_attn_idx)
+                    # [...,:3] added to not have charge in distance
+                    local_attn_feat = self.local_cross_attn(q=norm_q, v=norm_v, q_pos=q_pos[...,:3], v_pos=v_pos[...,:3], idx=cross_attn_idx)
                     feature_list.append(local_attn_feat)
                 # combine
                 if len(feature_list) == 2:
@@ -983,6 +985,8 @@ class PCTransformer(nn.Module):
     """
     def forward(self, xyzq):
         bs = xyzq.size(0)
+
+        xyz=xyzq[:,:,:3].contiguous()
         
         coor, f = self.grouper(xyzq, self.center_num) # b n c
         pe =  self.pos_embed(coor)
