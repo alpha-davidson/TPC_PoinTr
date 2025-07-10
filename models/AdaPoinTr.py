@@ -1000,9 +1000,9 @@ class PCTransformer(nn.Module):
         coarse = self.coarse_pred(global_feature).reshape(bs, -1, 4) # changed 3 to 4
 
         # coarse_inp = misc.fps(xyz, self.num_query//2) # B 128 3 # Replaced because 3D
-        coarse_xyz = misc.fps(xyz[:, :, :3], self.num_query // 2)
-        idx = knn_point(1, xyz[:, :, :3], coarse_xyz).squeeze(-1)
-        coarse_q = torch.gather(xyz[:, :, 3:], 1, idx.unsqueeze(-1))
+        coarse_xyz = misc.fps(xyz, self.num_query // 2)
+        idx = knn_point(1, xyz, coarse_xyz).squeeze(-1)
+        coarse_q = torch.gather(xyzq[:,:,3:], 1, idx.unsqueeze(-1)) # Get only charge
         coarse_inp = torch.cat([coarse_xyz, coarse_q], dim=-1)
             
         coarse = torch.cat([coarse, coarse_inp], dim=1) # B 224+128 3?
@@ -1024,7 +1024,7 @@ class PCTransformer(nn.Module):
 
             pick_xyz = misc.fps(xyz[:, :, :3], 64)
             idx = knn_point(1, xyz[:, :, :3], pick_xyz).squeeze(-1)
-            pick_q = torch.gather(xyz[:, :, 3:], 1, idx.unsqueeze(-1))
+            pick_q = torch.gather(xyzq[:, :, 3:], 1, idx.unsqueeze(-1))
             picked_points = torch.cat([misc.jitter_points(pick_xyz), pick_q], dim=-1)
 
             
@@ -1118,7 +1118,14 @@ class AdaPoinTr(nn.Module):
         # recon loss
         # Coarse
         loss_coarse_xyz = self.loss_func(pred_coarse[:,:,:3], gt[:,:,:3]) # Added [:,:,:3], 
-        loss_coarse_q = F.l1_loss(pred_coarse[:, :, 3],  gt[:, :, 3])
+
+        
+        # loss_coarse_q = F.l1_loss(pred_coarse[:, :, 3],  gt[:, :, 3]) 
+        # Following is done due to dimension mismatch:
+        idx_near = knn_point(1,gt[:,:,:3],pred_coarse[:,:,:3]).squeeze(-1)
+        matched_gt_q = torch.gather(gt[:, :, 3], 1, idx_near) #Gathers matching charges from GT
+        loss_coarse_q = F.l1_loss(pred_coarse[:, :, 3], matched_gt_q)
+        
         
         loss_fine_xyz = self.loss_func(pred_fine[:,:,:3], gt[:,:,:3])
         loss_fine_q = F.l1_loss(pred_fine[:, :, 3],   gt[:, :, 3])
@@ -1151,12 +1158,13 @@ class AdaPoinTr(nn.Module):
         
         # NOTE: foldingNet
         if self.decoder_type == 'fold':
-            rebuild_feature = self.reduce_map(rebuild_feature.reshape(B*M, -1)) # BM C
+            # rebuild_feature = self.reduce_map(rebuild_feature.reshape(B*M, -1)) # BM C
+            rebuild_feature = rebuild_feature.reshape(B * M, -1) # Added later for dimension issues
             relative_xyz = self.decode_head(rebuild_feature).reshape(B, M, 4, -1)    # B M 4 S # Changed from 3 to 4
             rebuild_points = (relative_xyz + coarse_point_cloud.unsqueeze(-1)).transpose(2,3)  # B M S 4
 
         else:
-            rebuild_feature = self.reduce_map(rebuild_feature) # B M C
+            # rebuild_feature = self.reduce_map(rebuild_feature) # B M C
             relative_xyz = self.decode_head(rebuild_feature)   # B M S 4
             rebuild_points = (relative_xyz + coarse_point_cloud.unsqueeze(-2))  # B M S 4
 
