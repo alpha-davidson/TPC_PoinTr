@@ -33,7 +33,7 @@ def scale_data(event):
     scaled[:,1] = (ys)/255.0
     scaled[:,2] = (zs)/255.0
     # Get rid of this to exclude charge
-    scaled[:,3] = qs
+    scaled[:,3] = qs/10000 # For better scaling
     return scaled
 
 
