@@ -73,7 +73,7 @@ def process_file(file_path, save_path, min_len, max_len):
             event[idx, 0] = p[0]
             event[idx, 1] = p[1]
             event[idx, 2] = p[2]
-            event[idx, 3] = p[4]
+            # event[idx, 3] = p[4]
 
         # Save each event with a random hash
         # Scale event also

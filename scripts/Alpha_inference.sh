@@ -32,7 +32,7 @@ RAND_GT_PATH="$(find "${COMPLETE_DIR}" | shuf -n 1)"
 RAND_EVENT_NAME="$(basename "${RAND_GT_PATH}" .npy)"
 
 # Get its random partial cloud here:
-RAND_PARTIAL_PATH="${PARTIAL_DIR}/${RAND_EVENT_NAME}/down.npy" #Can be down.npy or center.npy or rand.npy
+RAND_PARTIAL_PATH="${PARTIAL_DIR}/${RAND_EVENT_NAME}/center.npy" #Can be down.npy or center.npy or rand.npy
 
 
 # Inference
