@@ -106,7 +106,6 @@ The DataSet should be in the following form:
 │  ├── partial
 │  │   ├── NAME1
 │  │   │   ├── rand.npy
-│  │   │   ├── down.npy
 │  │   │   ├── .......
 │  │   ├── .......
 ├──train/
@@ -116,7 +115,6 @@ The DataSet should be in the following form:
 │  ├── partial
 │  │   ├── NAME2
 │  │   │   ├── rand.npy
-│  │   │   ├── down.npy
 │  │   │   ├── .......
 │  │   ├── .......
 ├──train/
@@ -126,7 +124,6 @@ The DataSet should be in the following form:
 │  ├── partial
 │  │   ├── NAME3
 │  │   │   ├── rand.npy
-│  │   │   ├── down.npy
 │  │   │   ├── .......
 │  │   ├── .......
 ├──category.json
@@ -145,132 +142,21 @@ bash scripts/Alpha_Train.sh
 ```
 At the bottom of cfgs/ALPHA_ATTPC_ALPHA.yaml, you can change the parameters of training. At least 250 epochs is recommended.
 
-KEEP ON EDITING FROM HERE:
+The log file for the training and the trained model can be found on experiments/ALPHA/ALPHA_ATTPC/ATTPC
 
 
 ### Inference
 
-To inference sample(s) with pretrained model
+To inference sample(s) with pretrained or recently trained model, and get a randomly completed image out of the dataset, as well as a loss vs epoch graph.
 
 ```
-python tools/inference.py \
-${POINTR_CONFIG_FILE} ${POINTR_CHECKPOINT_FILE} \
-[--pc_root <path> or --pc <file>] \
-[--save_vis_img] \
-[--out_pc_root <dir>] \
+bash scripts/Alpha_inference.sh
 ```
+In Alpha_inference.sh, the used model (ckpt-best.pth) can be adjusted, as well as the dataset used to select a random point cloud to predict.
 
-For example, inference all samples under `demo/` and save the results under `inference_result/`
-```
-python tools/inference.py \
-cfgs/PCN_models/AdaPoinTr.yaml ckpts/AdaPoinTr_PCN.pth \
---pc_root demo/ \ 
---save_vis_img  \
---out_pc_root inference_result/ \
-```
+The loss vs. epoch graph, and the partial cloud, its prediction, and its ground truth can be found on inference_result, as well as the name of the random point cloud selected at Example_pc.
 
-### Evaluation
-
-To evaluate a pre-trained PoinTr model on the Three Dataset with single GPU, run:
-
-```
-bash ./scripts/test.sh <GPU_IDS>  \
-    --ckpts <path> \
-    --config <config> \
-    --exp_name <name> \
-    [--mode <easy/median/hard>]
-```
-
-####  Some examples:
-Test the PoinTr (AdaPoinTr) pretrained model on the PCN benchmark or Projected_ShapeNet:
-```
-bash ./scripts/test.sh 0 \
-    --ckpts ./pretrained/PoinTr_PCN.pth \
-    --config ./cfgs/PCN_models/PoinTr.yaml \
-    --exp_name example
-
-bash ./scripts/test.sh 0 \
-    --ckpts ./pretrained/PoinTr_ps55.pth \
-    --config ./cfgs/Projected_ShapeNet55_models/AdaPoinTr.yaml \
-    --exp_name example
-```
-Test the PoinTr pretrained model on ShapeNet55 benchmark (*easy* mode):
-```
-bash ./scripts/test.sh 0 \
-    --ckpts ./pretrained/PoinTr_ShapeNet55.pth \
-    --config ./cfgs/ShapeNet55_models/PoinTr.yaml \
-    --mode easy \
-    --exp_name example
-```
-Test the PoinTr pretrained model on the KITTI benchmark:
-```
-bash ./scripts/test.sh 0 \
-    --ckpts ./pretrained/PoinTr_KITTI.pth \
-    --config ./cfgs/KITTI_models/PoinTr.yaml \
-    --exp_name example
-CUDA_VISIBLE_DEVICES=0 python KITTI_metric.py \
-    --vis <visualization_path> 
-```
-
-### Training
-
-To train a point cloud completion model from scratch, run:
-
-```
-# Use DistributedDataParallel (DDP)
-bash ./scripts/dist_train.sh <NUM_GPU> <port> \
-    --config <config> \
-    --exp_name <name> \
-    [--resume] \
-    [--start_ckpts <path>] \
-    [--val_freq <int>]
-# or just use DataParallel (DP)
-bash ./scripts/train.sh <GPUIDS> \
-    --config <config> \
-    --exp_name <name> \
-    [--resume] \
-    [--start_ckpts <path>] \
-    [--val_freq <int>]
-```
-####  Some examples:
-Train a PoinTr model on PCN benchmark with 2 gpus:
-```
-CUDA_VISIBLE_DEVICES=0,1 bash ./scripts/dist_train.sh 2 13232 \
-    --config ./cfgs/PCN_models/PoinTr.yaml \
-    --exp_name example
-```
-Resume a checkpoint:
-```
-CUDA_VISIBLE_DEVICES=0,1 bash ./scripts/dist_train.sh 2 13232 \
-    --config ./cfgs/PCN_models/PoinTr.yaml \
-    --exp_name example --resume
-```
-
-Finetune a PoinTr on PCNCars
-```
-CUDA_VISIBLE_DEVICES=0,1 bash ./scripts/dist_train.sh 2 13232 \
-    --config ./cfgs/KITTI_models/PoinTr.yaml \
-    --exp_name example \
-    --start_ckpts ./weight.pth
-```
-
-Train a PoinTr model with a single GPU:
-```
-bash ./scripts/train.sh 0 \
-    --config ./cfgs/KITTI_models/PoinTr.yaml \
-    --exp_name example
-```
-
-We also provide the Pytorch implementation of several baseline models including GRNet, PCN, TopNet and FoldingNet. For example, to train a GRNet model on ShapeNet-55, run:
-```
-CUDA_VISIBLE_DEVICES=0,1 bash ./scripts/dist_train.sh 2 13232 \
-    --config ./cfgs/ShapeNet55_models/GRNet.yaml \
-    --exp_name example
-```
-
-### Completion Results on ShapeNet55 and KITTI-Cars
-
-![results](fig/VisResults.gif)
+Continue from here:
 
 ## License
 MIT License
