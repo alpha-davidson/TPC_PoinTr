@@ -7,8 +7,7 @@
 #SBATCH --error "data-err.log"       # error message file
 
 # resource request info 
-#SBATCH --mem=32G
-#SBATCH --gres=gpu:1
+#SBATCH --mem=32Ghttps://github.com/yuxumin/PoinTr
 
 # Opt-into email alerts
 #SBATCH --mail-type ALL
