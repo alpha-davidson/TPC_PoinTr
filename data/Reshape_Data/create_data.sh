@@ -18,4 +18,4 @@
 source /opt/conda/bin/activate data
 
 # python process_mg_o_combo.py
-python process_var_in_len.py
+python mg22_process_var_in_len.py
