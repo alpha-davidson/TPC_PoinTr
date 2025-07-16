@@ -17,6 +17,8 @@ import json
 from .build import DATASETS
 from utils.logger import *
 
+from pathlib import Path
+
 @DATASETS.register_module()
 class ALPHA(data.Dataset):
     
@@ -30,9 +32,9 @@ class ALPHA(data.Dataset):
         #As data is normalised already
         self.already_norm = getattr(config, 'ALREADY_NORMALISED', False)
 
-        
-        # Following is possibly wrong:
-        self.variant = getattr(config, 'VARIANT', 'rand')
+        # Not an optimal solution
+        self.variant = getattr(config, 'VARIANT', 'center')
+
 
         
         # Load the dataset indexing file
@@ -173,7 +175,11 @@ class ALPHA(data.Dataset):
         
         # [:,:3] is a temporary fix for now to make the channels line up, the other option of making it train on 4-D will also be explored.
         
-        data['partial'] = IO.get(sample['partial_path']).astype(np.float32)[:,:3]
+        partial_path = Path(sample['partial_path'])
+        if not partial_path.exists():
+            partial_path = next(partial_path.parent.glob('*.npy'))
+        data['partial'] = IO.get(partial_path).astype(np.float32)[:, :3]
+        
         data['gt'] = IO.get(sample['gt_path']).astype(np.float32)[:,:3]
 
         if self.transforms is not None:
