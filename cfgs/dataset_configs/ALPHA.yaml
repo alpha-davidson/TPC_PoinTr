@@ -1,6 +1,6 @@
 NAME: ALPHA
-CATEGORY_FILE_PATH: /home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/category.json
-N_POINTS: 16384 # 2048
+CATEGORY_FILE_PATH: /home/DAVIDSON/hayavuzkara/Data/22Mg/category.json
+N_POINTS: 16384
 N_RENDERINGS: 8
 PARTIAL_POINTS_PATH: /home/DAVIDSON/hayavuzkara/Data/22Mg/%s/partial/%s/%s.npy
 COMPLETE_POINTS_PATH: /home/DAVIDSON/hayavuzkara/Data/22Mg/%s/complete/%s.npy
