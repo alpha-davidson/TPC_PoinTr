@@ -8,15 +8,31 @@ import time
 from utils.logger import *
 from utils.AverageMeter import AverageMeter
 from utils.metrics import Metrics
-from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2
+
+# For debugging
+import time as _tm
+print(">> importing ChamferDistance extension …", flush=True)
+_t0 = _tm.time()
+from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2  # noqa
+print("<< done in %.1f s" % (_tm.time() - _t0), flush=True)
+
+# from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2
 
 DEBUG=False
 
 def run_net(args, config, train_writer=None, val_writer=None):
     logger = get_logger(args.log_name)
     # build dataset
-    (train_sampler, train_dataloader), (_, test_dataloader) = builder.dataset_builder(args, config.dataset.train), \
-                                                            builder.dataset_builder(args, config.dataset.val)
+
+    # For debug
+    t_ds = time.time()
+    (train_sampler, train_dataloader), (_, test_dataloader) = \
+        builder.dataset_builder(args, config.dataset.train), \
+        builder.dataset_builder(args, config.dataset.val)
+    print_log(f"Dataset built in {time.time() - t_ds:.1f} s", logger=logger)
+    
+    # (train_sampler, train_dataloader), (_, test_dataloader) = builder.dataset_builder(args, config.dataset.train), \
+                                                            # builder.dataset_builder(args, config.dataset.val)
     # build model
     base_model = builder.model_builder(config.model)
     if args.use_gpu:
