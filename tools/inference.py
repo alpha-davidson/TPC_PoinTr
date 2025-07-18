@@ -1,6 +1,9 @@
 ##############################################################
 # % Author: Castle
 # % Date:14/01/2023
+
+# % Edited by: Hakan Bora Yavuzkara
+# % Date:02/06/2025
 ###############################################################
 import argparse
 import os
@@ -26,6 +29,7 @@ def get_args():
         'model_checkpoint', 
         help = 'pretrained weight')
     parser.add_argument('--pc_root', type=str, default='', help='Pc root')
+    parser.add_argument('--pc_name', type=str, default='', help='Pc name')
     parser.add_argument('--pc', type=str, default='', help='Pc file')   
     parser.add_argument(
         '--save_vis_img',
@@ -56,6 +60,11 @@ def inference_single(model, pc_path, args, config, root=None):
         pc_file = pc_path
     # read single point cloud
     pc_ndarray = IO.get(pc_file).astype(np.float32)
+
+    # TEMPORARY CHANGE TO GET RID OF 4TH DIMENSION FOR NOW:
+    if pc_ndarray.shape[1] > 3:
+        pc_ndarray = pc_ndarray[:, :3]
+        
     # transform it according to the model 
     if config.dataset.train._base_['NAME'] == 'ShapeNet':
         # normalize it to fit the model on ShapeNet-55/34
@@ -85,18 +94,37 @@ def inference_single(model, pc_path, args, config, root=None):
         dense_points = dense_points * m
         dense_points = dense_points + centroid
 
+    if args.out_pc_root:
+        base_name = args.pc_name if args.pc_name \
+                    else os.path.splitext(os.path.basename(pc_path))[0]
+
+        os.makedirs(args.out_pc_root, exist_ok=True)
+        save_path = os.path.join(args.out_pc_root, f"{base_name}_fine.npy")
+        np.save(save_path, dense_points)
+        print(f"[INFO] Saved prediction to {save_path}")
+
+        # Optional image output (kept intact)
+        if args.save_vis_img:
+            input_img  = misc.get_ptcloud_img(pc_ndarray_normalized['input'].numpy())
+            dense_img  = misc.get_ptcloud_img(dense_points)
+            cv2.imwrite(os.path.join(args.out_pc_root, f"{base_name}_input.jpg"), input_img)
+            cv2.imwrite(os.path.join(args.out_pc_root, f"{base_name}_fine.jpg"),  dense_img)
+
+    return
+    """
     if args.out_pc_root != '':
         target_path = os.path.join(args.out_pc_root, os.path.splitext(pc_path)[0])
         os.makedirs(target_path, exist_ok=True)
-
-        np.save(os.path.join(target_path, 'fine.npy'), dense_points)
+        np.save(os.path.join(target_path, f"{args.pc_name}fine.npy"), dense_points)
+        
         if args.save_vis_img:
             input_img = misc.get_ptcloud_img(pc_ndarray_normalized['input'].numpy())
             dense_img = misc.get_ptcloud_img(dense_points)
             cv2.imwrite(os.path.join(target_path, 'input.jpg'), input_img)
             cv2.imwrite(os.path.join(target_path, 'fine.jpg'), dense_img)
+    """
     
-    return
+ 
 
 def main():
     args = get_args()

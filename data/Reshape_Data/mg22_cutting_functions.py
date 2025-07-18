@@ -10,7 +10,7 @@ Date Edited:  13 Feb 2025
 
 import numpy as np
 
-
+#2048 and 1024+512
 def center_cut(ev, k):
     '''
     Cuts the closest k points to the line (0, 0, z)
@@ -34,7 +34,7 @@ def center_cut(ev, k):
     np.random.shuffle(cut)
     return cut
 
-
+"""
 def rand_cut(ev, k, generator):
     '''
     Cuts a random selection of k points that lie consecutively in the z-axis
@@ -58,8 +58,8 @@ def rand_cut(ev, k, generator):
     # Shuffle points in event
     generator.shuffle(cut, axis=0)
     return cut
-
-
+"""
+"""
 def middle_cut(ev, k):
     '''
     Sorts points by z coordinate and removes the middle k points
@@ -84,8 +84,8 @@ def middle_cut(ev, k):
     np.random.shuffle(cut)
 
     return cut
-
-
+"""
+"""
 def down_sample(ev, k):
     '''
     Removes a random selection of k points from an event
@@ -101,8 +101,8 @@ def down_sample(ev, k):
     np.random.shuffle(ev)
 
     return ev[k:]
-
-
+"""
+"""
 class MinMaxScaler:
     '''
     Scales point features to (0, 1) - lns charge amplitude before min/max 
@@ -169,3 +169,4 @@ class MinMaxScaler:
         upscaled = np.stack([uxs, uys, uzs, uqs], axis=-1)
 
         return upscaled
+"""

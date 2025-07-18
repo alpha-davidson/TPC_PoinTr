@@ -8,13 +8,31 @@ import time
 from utils.logger import *
 from utils.AverageMeter import AverageMeter
 from utils.metrics import Metrics
-from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2
+
+# For debugging
+import time as _tm
+print(">> importing ChamferDistance extension …", flush=True)
+_t0 = _tm.time()
+from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2  # noqa
+print("<< done in %.1f s" % (_tm.time() - _t0), flush=True)
+
+# from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2
+
+DEBUG=False
 
 def run_net(args, config, train_writer=None, val_writer=None):
     logger = get_logger(args.log_name)
     # build dataset
-    (train_sampler, train_dataloader), (_, test_dataloader) = builder.dataset_builder(args, config.dataset.train), \
-                                                            builder.dataset_builder(args, config.dataset.val)
+
+    # For debug
+    t_ds = time.time()
+    (train_sampler, train_dataloader), (_, test_dataloader) = \
+        builder.dataset_builder(args, config.dataset.train), \
+        builder.dataset_builder(args, config.dataset.val)
+    print_log(f"Dataset built in {time.time() - t_ds:.1f} s", logger=logger)
+    
+    # (train_sampler, train_dataloader), (_, test_dataloader) = builder.dataset_builder(args, config.dataset.train), \
+                                                            # builder.dataset_builder(args, config.dataset.val)
     # build model
     base_model = builder.model_builder(config.model)
     if args.use_gpu:
@@ -105,15 +123,17 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 
 
                 # CHECK FOR DIMENSIONS:
-                B, N, C  = partial.shape
-                _, Ngt, _ = gt.shape
-                assert C == 3,                      f"Partial has {C} channels, expected 3"
-                assert N == 2048,                   f"Partial length {N}, expected 2048"
-                assert Ngt == 16384,                f"GT length {Ngt}, expected 16384"
-                assert torch.isfinite(partial).all(), "NaN/Inf in partial batch"
-                assert torch.isfinite(gt).all(),      "NaN/Inf in GT batch"
-                
-                print(B,N,C,Ngt)
+                if DEBUG:
+                    B, N, C  = partial.shape
+                    _, Ngt, _ = gt.shape
+                    assert C == 3,                      f"Partial has {C} channels, expected 3"
+                    assert N == 2048,                   f"Partial length {N}, expected 2048"
+                    assert Ngt == 16384,                f"GT length {Ngt}, expected 16384"
+                    assert torch.isfinite(partial).all(), "NaN/Inf in partial batch"
+                    assert torch.isfinite(gt).all(),      "NaN/Inf in GT batch"
+    
+                    # Debugging purposes for dimension size, etc.
+                    # print(B,N,C,Ngt)
 
                 
                 
@@ -133,13 +153,14 @@ def run_net(args, config, train_writer=None, val_writer=None):
            
             ret = base_model(partial)
 
-            # FOR DEBUGGING, CHECKING FOR INF AND NAN
-            for name, tensor in [('partial', partial),
-                            ('gt',      gt),
-                            ('coarse',  ret[0]),
-                            ('dense',   ret[-1])]:
-                assert not (torch.isinf(tensor).any() or torch.isnan(tensor).any()), \
-                    f'Inf/NaN detected in {name} tensor (epoch {epoch}, batch {idx})'
+            if DEBUG:
+                # FOR DEBUGGING, CHECKING FOR INF AND NAN
+                for name, tensor in [('partial', partial),
+                                ('gt',      gt),
+                                ('coarse',  ret[0]),
+                                ('dense',   ret[-1])]:
+                    assert not (torch.isinf(tensor).any() or torch.isnan(tensor).any()), \
+                        f'Inf/NaN detected in {name} tensor (epoch {epoch}, batch {idx})'
             
             sparse_loss, dense_loss = base_model.module.get_loss(ret, gt, epoch)
          
@@ -160,8 +181,8 @@ def run_net(args, config, train_writer=None, val_writer=None):
             else:
                 losses.update([sparse_loss.item() * 1000, dense_loss.item() * 1000])
 
-
-            if args.distributed:
+            #Added later
+            if args.distributed and DEBUG:
                 torch.cuda.synchronize()
 
             n_itr = epoch * n_batches + idx
