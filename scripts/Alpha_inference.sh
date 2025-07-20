@@ -22,7 +22,7 @@ export TORCH_CUDA_ARCH_LIST="8.6"
 
 
 # To choose random partial point cloud and its gt:
-DATA_ROOT="/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo"
+DATA_ROOT="/home/DAVIDSON/hayavuzkara/Data/22Mg"
 SPLIT_ROOT="${DATA_ROOT}/test" # Can change to train or val as well. I am using test for it to work with unseen data.
 COMPLETE_DIR="${SPLIT_ROOT}/complete"
 PARTIAL_DIR="${SPLIT_ROOT}/partial"
@@ -32,7 +32,7 @@ RAND_GT_PATH="$(find "${COMPLETE_DIR}" | shuf -n 1)"
 RAND_EVENT_NAME="$(basename "${RAND_GT_PATH}" .npy)"
 
 # Get its random partial cloud here:
-RAND_PARTIAL_PATH="${PARTIAL_DIR}/${RAND_EVENT_NAME}/down.npy" #Can be down.npy or center.npy or rand.npy
+RAND_PARTIAL_PATH="${PARTIAL_DIR}/${RAND_EVENT_NAME}/center.npy" #Can be down.npy or center.npy or rand.npy
 
 
 # Inference
