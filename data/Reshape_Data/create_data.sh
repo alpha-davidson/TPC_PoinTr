@@ -8,7 +8,6 @@
 
 # resource request info 
 #SBATCH --mem=32G
-#SBATCH --gres=gpu:1
 
 # Opt-into email alerts
 #SBATCH --mail-type ALL
@@ -18,4 +17,4 @@
 source /opt/conda/bin/activate data
 
 # python process_mg_o_combo.py
-python process_var_in_len.py
+python exp_process_var_in_len.py

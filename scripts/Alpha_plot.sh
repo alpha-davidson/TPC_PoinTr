@@ -20,5 +20,5 @@ source /opt/conda/bin/activate env1
 
 export TORCH_CUDA_ARCH_LIST="8.6"
 
-python graph.py
+python tools/graph.py
 

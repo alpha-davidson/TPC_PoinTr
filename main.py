@@ -1,8 +1,11 @@
 import torch
+
 # Used to choose correct memory usage
+"""
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
+"""
 
 from tools import run_net
 from tools import test_net
