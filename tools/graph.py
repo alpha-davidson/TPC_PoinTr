@@ -17,8 +17,9 @@ parser.add_argument('--partial_path', type=str, required=True,
 parser.add_argument('--predict_path', type=str, required=True,
                     help='predicted file path')
 
-parser.add_argument('--gt_path', type=str, required=True,
+parser.add_argument('--gt_path', type=str, required=False,
                     help='gt file path')
+
 args = parser.parse_args()
 
 
@@ -29,8 +30,6 @@ gt_path = args.gt_path
 
 partial  = np.load(partial_path)         
 predict = np.load(predict_path)       
-gt = np.load(gt_path)
-
 
 
 
@@ -76,18 +75,20 @@ plt.savefig(os.path.join(out_dir, "predict.png"), dpi=300)
 plt.close()
 
 # Ground Truth
-gt_scaled=gt*255
-fig3 = plt.figure(figsize=(10,4))
-ax3 = plt.axes(projection="3d")
-ax3.scatter(gt_scaled[:, 0], gt_scaled[:, 1], gt_scaled[:, 2], s=1)
-ax3.set_xlim(-255,255)
-ax3.set_ylim(-255,255)
-ax3.set_zlim(0,255*4)
-ax3.set_xticks(np.arange(-200, 201, 100))
-ax3.set_yticks(np.arange(-200, 201, 100))
-ax3.set_zticks(np.arange(0, 255*4, 200))
-ax3.set_box_aspect(BOX_ASPECT)
-ax3.set_title("GT")
-ax3.view_init(elev=15, azim=15, vertical_axis='x') 
-plt.savefig(os.path.join(out_dir, "GroundTruth.png"), dpi=300)
-plt.close()
+if gt_path:
+    gt = np.load(gt_path)
+    gt_scaled=gt*255
+    fig3 = plt.figure(figsize=(10,4))
+    ax3 = plt.axes(projection="3d")
+    ax3.scatter(gt_scaled[:, 0], gt_scaled[:, 1], gt_scaled[:, 2], s=1)
+    ax3.set_xlim(-255,255)
+    ax3.set_ylim(-255,255)
+    ax3.set_zlim(0,255*4)
+    ax3.set_xticks(np.arange(-200, 201, 100))
+    ax3.set_yticks(np.arange(-200, 201, 100))
+    ax3.set_zticks(np.arange(0, 255*4, 200))
+    ax3.set_box_aspect(BOX_ASPECT)
+    ax3.set_title("GT")
+    ax3.view_init(elev=15, azim=15, vertical_axis='x') 
+    plt.savefig(os.path.join(out_dir, "GroundTruth.png"), dpi=300)
+    plt.close()

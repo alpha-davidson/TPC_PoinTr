@@ -960,6 +960,15 @@ class AdaPoinTr(nn.Module):
             q,
             coarse_point_cloud], dim=-1)  # B M 1027 + C
 
+
+
+        
+        # Only for saving global features
+        np.save('/home/DAVIDSON/hayavuzkara/Data/LatentSpaceEmb.npy', global_feature)
+
+
+
+
         
         # NOTE: foldingNet
         if self.decoder_type == 'fold':

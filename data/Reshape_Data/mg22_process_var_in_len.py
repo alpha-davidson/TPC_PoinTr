@@ -13,7 +13,7 @@ import os
 import h5py
 import random
 import sys
-import mg22_cutting_functions as cf
+import cutting_functions as cf
 sys.path.append("/data")
 sys.path.append("../")
 
@@ -359,18 +359,23 @@ def create_partial_clouds(path, percentage_cut=0.25):
 
 if __name__ == '__main__':
 
-    MG_FILE_PATH = '/data/22Mg/point_clouds/simulated/output_digi_HDF_Mg22_Ne20pp_8MeV.h5'
+
+    # Experimental
+    MG_FILE_PATH = '/data/22Mg/point_clouds/experimental/22Mg_alpha_exp.h5'
+    
+    # Simulated
+    #MG_FILE_PATH = '/data/22Mg/point_clouds/simulated/output_digi_HDF_Mg22_Ne20pp_8MeV.h5'
 
     # Make sure to edit these paths accordingly, for some reason it doesn't
     # like it when ~ is used instead of /home/DAVIDSON/username
     MG_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/Recycle/mg22'
 
-    FINAL_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg"
+    FINAL_PATH = "/home/DAVIDSON/hayavuzkara/Data/22MgExp" #Experimental
 
     MIN_N_POINTS = 80
     MAX_N_POINTS = 1500
 
-    CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg/category.json"
+    CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22MgExp/category.json" #Experimental
 
     #RANGE
 
