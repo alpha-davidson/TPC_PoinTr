@@ -198,11 +198,16 @@ def sample(data, lengths, n_complete, rng):
 
 if __name__ == '__main__':
 
+    """
     EXP_FILE_PATH = '/data/46Ar/point_clouds/experimental/run_0210_peaks.h5'  #CHANGE TO RELEVANT
     EXP_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/46Ar/all' #CHANGE TO RELEVANT
+    """
 
-    MIN_N_POINTS = 0
-    MAX_N_POINTS = 1000000
+    EXP_FILE_PATH = '/data/22Mg/point_clouds/experimental/22Mg_alpha_exp.h5'  #CHANGE TO RELEVANT
+    EXP_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/22MgExp/all' #CHANGE TO RELEVANT
+
+    MIN_N_POINTS = 50
+    MAX_N_POINTS = 1000
 
 
     #RANGE

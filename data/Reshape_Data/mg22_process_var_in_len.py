@@ -32,18 +32,18 @@ def scale_data(event, ranges):
 
     scaled = np.ndarray(event.shape)
 
-    #xs, ys, zs, qs = ev[:, 0], ev[:, 1], ev[:, 2], ev[:, 3]
+    xs, ys, zs, qs = ev[:, 0], ev[:, 1], ev[:, 2], ev[:, 3]
     xs, ys, zs= event[:, 0], event[:, 1], event[:, 2]
 
     dxs = (xs - ranges['MIN_X']) / (ranges['MAX_X'] - ranges['MIN_X'])
     dys = (ys - ranges['MIN_Y']) / (ranges['MAX_Y'] - ranges['MIN_Y'])
     dzs = (zs - ranges['MIN_Z']) / (ranges['MAX_Z'] - ranges['MIN_Z'])
-    #dqs = (np.log(qs) - ranges['MIN_LNQ']) / (ranges['MAX_LNQ'] - ranges['MIN_LNQ'])
+    dqs = (np.log(qs) - ranges['MIN_LNQ']) / (ranges['MAX_LNQ'] - ranges['MIN_LNQ'])
 
     scaled[:, 0] = dxs
     scaled[:, 1] = dys
     scaled[:, 2] = dzs
-    #scaled[:, 3] = dqs
+    scaled[:, 3] = dqs
 
     return scaled
 
@@ -360,22 +360,19 @@ def create_partial_clouds(path, percentage_cut=0.25):
 if __name__ == '__main__':
 
 
-    # Experimental
-    MG_FILE_PATH = '/data/22Mg/point_clouds/experimental/22Mg_alpha_exp.h5'
-    
     # Simulated
-    #MG_FILE_PATH = '/data/22Mg/point_clouds/simulated/output_digi_HDF_Mg22_Ne20pp_8MeV.h5'
+    MG_FILE_PATH = '/data/22Mg/point_clouds/simulated/output_digi_HDF_Mg22_Ne20pp_8MeV.h5'
 
     # Make sure to edit these paths accordingly, for some reason it doesn't
     # like it when ~ is used instead of /home/DAVIDSON/username
     MG_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/Recycle/mg22'
 
-    FINAL_PATH = "/home/DAVIDSON/hayavuzkara/Data/22MgExp" #Experimental
+    FINAL_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg" #Experimental
 
     MIN_N_POINTS = 80
     MAX_N_POINTS = 1500
 
-    CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22MgExp/category.json" #Experimental
+    CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg/category.json" #Experimental
 
     #RANGE
 

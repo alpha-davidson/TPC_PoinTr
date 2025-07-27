@@ -35,7 +35,6 @@ python tools/inference.py cfgs/ALPHA_ATTPC/ALPHA.yaml \
   experiments/ALPHA/ALPHA_ATTPC/ATTPC/MG22Only/ckpt-best.pth \
   --pc "${RAND_PATH}" --out_pc_root "inference_result/Example_pc" --pc_name "${RAND_EVENT_NAME}"
 
-
 # Graph 
 python tools/graph.py \
   --partial_path "${RAND_PATH}" \

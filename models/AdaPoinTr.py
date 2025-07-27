@@ -12,6 +12,8 @@ from .build import MODELS, build_model_from_cfg
 from models.Transformer_utils import *
 from utils import misc
 
+# import numpy as np
+
 class SelfAttnBlockApi(nn.Module):
     r'''
         1. Norm Encoder Block 
@@ -962,10 +964,10 @@ class AdaPoinTr(nn.Module):
 
 
 
-        
+        """
         # Only for saving global features
-        np.save('/home/DAVIDSON/hayavuzkara/Data/LatentSpaceEmb.npy', global_feature)
-
+        np.save('../Data/LatentSpaceEmb.npy', global_feature)
+        """
 
 
 
