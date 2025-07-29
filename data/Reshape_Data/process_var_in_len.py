@@ -19,23 +19,38 @@ sys.path.append("../")
 
 
 
-def scale_data(event):
+def scale_data(ev, ranges):
     """
-    x,y (-1,1)
-    z (0,4)
-    
-    """
-    scaled = np.empty(event.shape, dtype=np.float32)
-    xs, ys, zs = event[:,0], event[:,1], event[:,2]
+    Min/Max scales data based on ranges (logs qs first)
 
-    scaled[:,0] = (xs)/255.0
-    scaled[:,1] = (ys)/255.0
-    scaled[:,2] = (zs)/255.0
+    Parameters:
+        data: numpy.ndarray - data to scale
+        ranges: dict - contains min and max values of x,y,z, and ln(q)
+
+    Returns:
+        scaled: numpy.ndarray - scaled data
+    """
+
+    scaled = np.ndarray(ev.shape)
+
+    xs, ys, zs, qs = ev[:, 0], ev[:, 1], ev[:, 2], ev[:, 3]
+    #xs, ys, zs= ev[:, 0], ev[:, 1], ev[:, 2]
+
+    dxs = (xs - ranges['MIN_X']) / (ranges['MAX_X'] - ranges['MIN_X'])
+    dys = (ys - ranges['MIN_Y']) / (ranges['MAX_Y'] - ranges['MIN_Y'])
+    dzs = (zs - ranges['MIN_Z']) / (ranges['MAX_Z'] - ranges['MIN_Z'])
+    dqs = (np.log(qs) - ranges['MIN_LNQ']) / (ranges['MAX_LNQ'] - ranges['MIN_LNQ'])
+
+    scaled[:, 0] = dxs
+    scaled[:, 1] = dys
+    scaled[:, 2] = dzs
+    scaled[:, 3] = dqs
+
     return scaled
 
 
 
-def process_file(file_path, save_path, min_len, max_len):
+def process_file(file_path, save_path, min_len, max_len,upsampleN,RNG,ranges):
     '''
     Turns .h5 file into individual numpy arrays for each event. 
     Hard coded for 4 dimensional output point cloud and 
@@ -50,6 +65,7 @@ def process_file(file_path, save_path, min_len, max_len):
     Returns:
         None
     '''
+    
 
     file = h5py.File(file_path, 'r')
     keys = list(file.keys())
@@ -73,9 +89,17 @@ def process_file(file_path, save_path, min_len, max_len):
             event[idx, 2] = p[2]
             event[idx, 3] = p[4]
 
+        if event.shape[0] < upsampleN:
+            extra = RNG.choice(event.shape[0], upsampleN - event.shape[0], replace=True)
+            event = np.concatenate([event, event[extra]], axis=0)
+
+        elif event.shape[0] > upsampleN:
+            keep = RNG.choice(event.shape[0], upsampleN, replace=False)
+            event = event[keep]
+
         # Save each event with a random hash
         # Scale event also
-        scaled_event = scale_data(event)
+        scaled_event = scale_data(event,ranges)
         name = f"{save_path}/{random.getrandbits(128):032x}.npy"
         np.save(name, scaled_event)
 
@@ -287,7 +311,7 @@ def sort_files(mg_path, o_path, save_path, train, val, test):
     return
 
 
-def create_partial_clouds(path, percentage_cut=0.25):
+def create_partial_clouds(path, percentage_cut=0.50):
     '''
     Cuts complete cloud into 3 partial clouds: center, random, and downsampled
 
@@ -350,12 +374,30 @@ if __name__ == '__main__':
     MIN_N_POINTS = 50
     MAX_N_POINTS = 1500
 
+    #RANGE
+    
+    N_COMPLETE = 256
+    N_PARTIAL = 128
+    MIN_N_UNIQUE = 16
+    
     CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/category.json"
 
+    RANGES = {
+    'MIN_X' : -270.0,
+    'MAX_X' :  270.0,
+    'MIN_Y' : -270.0,
+    'MAX_Y' :  270.0,
+    'MIN_Z' : -185.0,
+    'MAX_Z' : 1185.0,
+    'MIN_LNQ' :  1.0,
+    'MAX_LNQ' : 10.2
+    }
+
+    RNG = np.random.default_rng()
 
     # Process
-    process_file(MG_FILE_PATH, MG_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS)
-    process_file(O_FILE_PATH, O_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS)
+    process_file(MG_FILE_PATH, MG_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS, N_COMPLETE, RNG, RANGES)
+    process_file(O_FILE_PATH, O_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS, N_COMPLETE, RNG, RANGES)
 
     # Split and sort
     train, val, test = get_ttv_split(MG_SAVE_PATH, O_SAVE_PATH)

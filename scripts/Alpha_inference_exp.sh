@@ -22,7 +22,7 @@ export TORCH_CUDA_ARCH_LIST="8.6"
 
 
 # To choose random partial point cloud and its gt:
-DATA_ROOT="/home/DAVIDSON/hayavuzkara/Data/22MgExp/all"
+DATA_ROOT="/home/DAVIDSON/hayavuzkara/Data/voxel_data/Mg22Exper"
 
 
 RAND_PATH="$(find "${DATA_ROOT}" | shuf -n 1)"
@@ -31,8 +31,9 @@ RAND_EVENT_NAME="$(basename "${RAND_PATH}" .npy)"
 
 # Inference
 # Path switched
+# Can change model
 python tools/inference.py cfgs/ALPHA_ATTPC/ALPHA.yaml \
-  experiments/ALPHA/ALPHA_ATTPC/ATTPC/MG22Only/ckpt-best.pth \
+  experiments/ALPHA/ALPHA_ATTPC/ATTPC/Mg22_O16_combo/ckpt-best.pth \
   --pc "${RAND_PATH}" --out_pc_root "inference_result/Example_pc" --pc_name "${RAND_EVENT_NAME}"
 
 # Graph 

@@ -32,7 +32,7 @@ def scale_data(event, ranges):
 
     scaled = np.ndarray(event.shape)
 
-    xs, ys, zs, qs = ev[:, 0], ev[:, 1], ev[:, 2], ev[:, 3]
+    #xs, ys, zs, qs = ev[:, 0], ev[:, 1], ev[:, 2], ev[:, 3]
     xs, ys, zs= event[:, 0], event[:, 1], event[:, 2]
 
     dxs = (xs - ranges['MIN_X']) / (ranges['MAX_X'] - ranges['MIN_X'])

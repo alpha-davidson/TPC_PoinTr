@@ -46,48 +46,48 @@ class ALPHA(data.Dataset):
         self.file_list = self._get_file_list(self.subset, self.n_renderings)
         self.transforms = self._get_transforms(self.subset)
 
-    def _get_transforms(self,subset):
 
+        
+    def _get_transforms(self, subset):
         #Following idea is added later:
         """
-        common = [
-        {
-            'callback': 'UpSamplePoints',
-            'parameters': {'n_points': self.npoints},
-            'objects': ['partial', 'gt']
-        }
-        ]
-
-        if subset == 'train':
-            return data_transforms.Compose(
-                common + [
-                    {
-                        'callback': 'RandomMirrorPoints',
-                        'objects': ['partial', 'gt']
-                    },
-                    {
-                        'callback': 'ToTensor',
-                        'objects': ['partial', 'gt']
-                    }
-                ]
-            )
-        else:   # val / test
-            return data_transforms.Compose(
-                common + [
-                    {
-                        'callback': 'ToTensor',
-                        'objects': ['partial', 'gt']
-                    }
-                ]
-            )
+          Ensures:
+            • partial  → PARTIAL_N_POINTS
+            • gt       → N_POINTS
         """
+        partial_block = {
+            'callback': 'RandomSamplePoints' if subset != 'train' else 'UpSamplePoints',
+            'parameters': {'n_points': 128}, # 128 change made later
+            'objects': ['partial']
+        }
+    
+        gt_block = {
+            'callback': 'UpSamplePoints',
+            'parameters': {'n_points': self.npoints},   # 256
+            'objects': ['gt']
+        }
+    
+        mirror_block = {'callback': 'RandomMirrorPoints',
+                        'objects': ['partial', 'gt']}
+    
+        tensor_block = {'callback': 'ToTensor',
+                        'objects': ['partial', 'gt']}
+    
+        if subset == 'train':
+            blocks = [partial_block, gt_block, mirror_block, tensor_block]
+        else:                            # val / test
+            blocks = [partial_block, gt_block, tensor_block]
+    
+        return data_transforms.Compose(blocks)
             
-
+        """
+        # CHANGE N_POINTS
+        
         if subset == 'train':
             return data_transforms.Compose([{
                 'callback': 'UpSamplePoints',
                 'parameters': {
-                    'n_points': 2048 
+                    'n_points': 256
                 },
                 'objects': ['partial'] # When gt, error is tensor size mismatch
             },{
@@ -109,7 +109,7 @@ class ALPHA(data.Dataset):
             return data_transforms.Compose([{
                 'callback': 'RandomSamplePoints',
                 'parameters': {
-                    'n_points': 2048
+                    'n_points': 256
                 },
                 'objects': ['partial']
             },{
@@ -124,6 +124,7 @@ class ALPHA(data.Dataset):
                 'callback': 'ToTensor',
                 'objects': ['partial', 'gt']
             }])
+        """
 
 
             
