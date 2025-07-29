@@ -10,7 +10,7 @@ Date Edited:  13 Feb 2025
 
 import numpy as np
 
-
+#2048 and 1024+512
 def center_cut(ev, k):
     '''
     Cuts the closest k points to the line (0, 0, z)
@@ -33,7 +33,6 @@ def center_cut(ev, k):
     # Shuffle points in event
     np.random.shuffle(cut)
     return cut
-
 
 def rand_cut(ev, k, generator):
     '''
@@ -58,7 +57,6 @@ def rand_cut(ev, k, generator):
     # Shuffle points in event
     generator.shuffle(cut, axis=0)
     return cut
-
 
 def middle_cut(ev, k):
     '''
@@ -85,7 +83,6 @@ def middle_cut(ev, k):
 
     return cut
 
-
 def down_sample(ev, k):
     '''
     Removes a random selection of k points from an event
@@ -101,7 +98,6 @@ def down_sample(ev, k):
     np.random.shuffle(ev)
 
     return ev[k:]
-
 
 class MinMaxScaler:
     '''

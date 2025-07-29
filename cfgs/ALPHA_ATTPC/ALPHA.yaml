@@ -37,8 +37,9 @@ dataset : {
             
 model : {
     NAME: AdaPoinTr, 
-    num_query: 512, 
-    num_points: 16384,
+    # Changed
+    num_query: 256, 
+    num_points: 1024,
     center_num: [512, 256],
     global_feature_dim: 1024, 
     encoder_type: graph,
@@ -66,9 +67,10 @@ model : {
       cross_attn_combine_style: 'concat',
     }
 }
-  
+
+# Important Parameters here
 total_bs : 8
 step_per_update : 1
-max_epoch : 50
+max_epoch : 750
 
 consider_metric: CDL1

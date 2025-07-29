@@ -18,8 +18,7 @@ sys.path.append("/data")
 sys.path.append("../")
 
 
-
-def scale_data(ev, ranges):
+def scale_data(event, ranges):
     """
     Min/Max scales data based on ranges (logs qs first)
 
@@ -31,10 +30,10 @@ def scale_data(ev, ranges):
         scaled: numpy.ndarray - scaled data
     """
 
-    scaled = np.ndarray(ev.shape)
+    scaled = np.ndarray(event.shape)
 
-    xs, ys, zs, qs = ev[:, 0], ev[:, 1], ev[:, 2], ev[:, 3]
-    #xs, ys, zs= ev[:, 0], ev[:, 1], ev[:, 2]
+    #xs, ys, zs, qs = ev[:, 0], ev[:, 1], ev[:, 2], ev[:, 3]
+    xs, ys, zs= event[:, 0], event[:, 1], event[:, 2]
 
     dxs = (xs - ranges['MIN_X']) / (ranges['MAX_X'] - ranges['MIN_X'])
     dys = (ys - ranges['MIN_Y']) / (ranges['MAX_Y'] - ranges['MIN_Y'])
@@ -50,7 +49,8 @@ def scale_data(ev, ranges):
 
 
 
-def process_file(file_path, save_path, min_len, max_len,upsampleN,RNG,ranges):
+
+def process_file(file_path, save_path, min_len, max_len, upsampleN,RNG,ranges):
     '''
     Turns .h5 file into individual numpy arrays for each event. 
     Hard coded for 4 dimensional output point cloud and 
@@ -65,7 +65,6 @@ def process_file(file_path, save_path, min_len, max_len,upsampleN,RNG,ranges):
     Returns:
         None
     '''
-    
 
     file = h5py.File(file_path, 'r')
     keys = list(file.keys())
@@ -87,16 +86,13 @@ def process_file(file_path, save_path, min_len, max_len,upsampleN,RNG,ranges):
             event[idx, 0] = p[0]
             event[idx, 1] = p[1]
             event[idx, 2] = p[2]
-            event[idx, 3] = p[4]
+            #event[idx, 3] = p[4]
 
+        # Upsample
         if event.shape[0] < upsampleN:
-            extra = RNG.choice(event.shape[0], upsampleN - event.shape[0], replace=True)
+            extra = RNG.choice(event.shape[0], 2048 - event.shape[0], replace=True)
             event = np.concatenate([event, event[extra]], axis=0)
-
-        elif event.shape[0] > upsampleN:
-            keep = RNG.choice(event.shape[0], upsampleN, replace=False)
-            event = event[keep]
-
+        
         # Save each event with a random hash
         # Scale event also
         scaled_event = scale_data(event,ranges)
@@ -104,7 +100,7 @@ def process_file(file_path, save_path, min_len, max_len,upsampleN,RNG,ranges):
         np.save(name, scaled_event)
 
 
-def get_ttv_split(mg_path, o_path, train_split=0.6, val_split=0.2):
+def get_ttv_split(mg_path, train_split=0.6, val_split=0.2):
     '''
     Splits events into train, val, and test sets
 
@@ -124,16 +120,12 @@ def get_ttv_split(mg_path, o_path, train_split=0.6, val_split=0.2):
     '''
     
     mg_hashes = os.listdir(mg_path)
-    o_hashes = os.listdir(o_path)
 
-    name_arr = np.ndarray((len(mg_hashes) + len(o_hashes)),
+    name_arr = np.ndarray(len(mg_hashes),
                           dtype=[('hash', 'object'), ('experiment', 'object')])
     i = 0
     for h in mg_hashes:
         name_arr[i] = (h.split('.')[0], '22Mg')
-        i += 1
-    for h in o_hashes:
-        name_arr[i] = (h.split('.')[0], '16O')
         i += 1
 
     rng = np.random.default_rng()
@@ -171,42 +163,6 @@ def make_category_file(train, val, test, path):
         jason.write("[\n")
 
         jason.write("\t{\n")
-        
-        jason.write("\t\t\"experiment\": \"16O\",\n")
-        jason.write("\t\t\"train\": [\n")
-
-        end = 0
-        for event in train:
-            if train[end+1]['experiment'] != "16O":
-                break
-            jason.write(f"\t\t\t\"{event['hash']}\",\n")
-            end += 1
-        jason.write(f"\t\t\t\"{train[end]['hash']}\"\n")
-        jason.write("\t\t],\n")
-
-        jason.write("\t\t\"val\": [\n")
-        end = 0
-        for event in val:
-            if val[end+1]['experiment'] != "16O":
-                continue
-            jason.write(f"\t\t\t\"{event['hash']}\",\n")
-            end += 1
-        jason.write(f"\t\t\t\"{val[end]['hash']}\"\n")
-        jason.write("\t\t],\n")
-
-        jason.write("\t\t\"test\": [\n")
-        end = 0
-        for event in test:
-            if test[end+1]['experiment'] != "16O":
-                continue
-            jason.write(f"\t\t\t\"{event['hash']}\",\n")
-            end += 1
-        jason.write(f"\t\t\t\"{test[end]['hash']}\"\n")
-        jason.write("\t\t]\n")
-
-        jason.write("\t},\n")
-
-        jason.write("\t{\n")
         jason.write("\t\t\"experiment\": \"22Mg\",\n")
         jason.write("\t\t\"train\": [\n")
 
@@ -238,7 +194,7 @@ def make_category_file(train, val, test, path):
         return
     
 
-def sort_files(mg_path, o_path, save_path, train, val, test):
+def sort_files(mg_path, save_path, train, val, test):
     '''
     Reorganizes files based on their dataset.
     Raises a NameError if an unknown hash is encountered
@@ -292,26 +248,68 @@ def sort_files(mg_path, o_path, save_path, train, val, test):
         else:
             raise NameError(f"Hash {hsh} not found with 22Mg files")
 
-    for file in os.listdir(o_path):
-    
-        hsh = file.split(".")[0]
-        if hsh in train['hash']:
-            os.rename(os.path.join(o_path, file), os.path.join(save_path, 'train', 'complete', file))
-        elif hsh in val['hash']:
-            os.rename(os.path.join(o_path, file), os.path.join(save_path, 'val', 'complete', file))
-        elif hsh in test['hash']:
-            os.rename(os.path.join(o_path, file), os.path.join(save_path, 'test', 'complete', file))
-        else:
-            raise NameError(f"Hash {hsh} not found with 16O files")
         
     # Remove old folders
     os.rmdir(mg_path)
-    os.rmdir(o_path)
 
     return
 
 
-def create_partial_clouds(path, percentage_cut=0.50):
+def sample(data, lengths, n_complete, rng):
+    """
+    Samples events to a set number of total points
+
+    Parameters:
+        data: numpy.ndarray - data to sample
+        lengths: numpy.ndarray - number of unique points in each event
+        n_complete: int - number of points to sample to
+        rng: numpy.random._generator.Generator - random number generator 
+            (usually an instance of numpy.random.default_rng())
+
+    Returns:
+        sampled: numpy.ndarray - sampled events
+    """
+
+    sampled = np.ndarray((len(lengths), n_complete, 4))
+    ZERO = np.array([0.0, 0.0, 0.0])
+
+    idx = 0
+    for i, ev in enumerate(data):
+
+        if lengths[i] == 0: # Discard
+            continue
+
+        elif lengths[i] < n_complete: # Up sample
+
+            # Get complete event
+            og_l, l = lengths[i], lengths[i]
+            sampled[idx, :og_l] = ev[:og_l]
+
+            # Randomly select non zero points to upsample with
+            while l < n_complete:
+                chosen = rng.choice(ev[:og_l])
+                while np.array_equal(chosen, ZERO):
+                    chosen = rng.choice(ev[:og_l])
+                sampled[idx, l] = chosen
+                l += 1
+
+        elif lengths[i] > n_complete: # Down sample
+
+            # Randomly select n_complete points
+            whole_ev = ev[:lengths[i]]
+            rng.shuffle(whole_ev, axis=0)
+            sampled[idx] = whole_ev[:n_complete]
+
+        else: # No sampling necessary
+            sampled[idx] = ev[:n_complete]
+        
+        idx += 1
+
+    return sampled
+
+
+
+def create_partial_clouds(path, percentage_cut=0.25):
     '''
     Cuts complete cloud into 3 partial clouds: center, random, and downsampled
 
@@ -345,67 +343,68 @@ def create_partial_clouds(path, percentage_cut=0.50):
             k = int(len(event) * percentage_cut)
 
             center = cf.center_cut(event, k)
-            rand = cf.rand_cut(event, k, rng)
-            down = cf.down_sample(event, k)
+            #rand = cf.rand_cut(event, k, rng)
+            #down = cf.down_sample(event, k)
 
             hsh = file.split('.')[0]
             if not os.path.exists(path+split+f'/partial/{hsh}'):
                 os.mkdir(path+split+f'/partial/{hsh}')
 
             np.save(path+split+f'/partial/{hsh}/center.npy', center)
-            np.save(path+split+f'/partial/{hsh}/rand.npy', rand)
-            np.save(path+split+f'/partial/{hsh}/down.npy', down)
+            #np.save(path+split+f'/partial/{hsh}/rand.npy', rand)
+            #np.save(path+split+f'/partial/{hsh}/down.npy', down)
 
     return
 
 
 if __name__ == '__main__':
 
+
+    # Simulated
     MG_FILE_PATH = '/data/22Mg/point_clouds/simulated/output_digi_HDF_Mg22_Ne20pp_8MeV.h5'
-    O_FILE_PATH = '/data/16O/point_clouds/simulated/output_digi_HDF_2Body_2T.h5'
 
     # Make sure to edit these paths accordingly, for some reason it doesn't
     # like it when ~ is used instead of /home/DAVIDSON/username
     MG_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/Recycle/mg22'
-    O_SAVE_PATH = '/home/DAVIDSON/hayavuzkara/Data/Recycle/o16'
 
-    FINAL_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo"
+    FINAL_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg" #Experimental
 
-    MIN_N_POINTS = 50
+    MIN_N_POINTS = 80
     MAX_N_POINTS = 1500
 
+    CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg/category.json" #Experimental
+
     #RANGE
+
     
-    N_COMPLETE = 256
-    N_PARTIAL = 128
-    MIN_N_UNIQUE = 16
-    
-    CATEGORY_FILE_PATH = "/home/DAVIDSON/hayavuzkara/Data/22Mg_16O_combo/category.json"
+    N_COMPLETE = 2048
+    N_PARTIAL = 1024 + 512
+    MIN_N_UNIQUE = 128
 
     RANGES = {
-    'MIN_X' : -270.0,
-    'MAX_X' :  270.0,
-    'MIN_Y' : -270.0,
-    'MAX_Y' :  270.0,
-    'MIN_Z' : -185.0,
-    'MAX_Z' : 1185.0,
-    'MIN_LNQ' :  1.0,
-    'MAX_LNQ' : 10.2
+        'MIN_X' : -270.0,
+        'MAX_X' :  270.0,
+        'MIN_Y' : -270.0,
+        'MAX_Y' :  270.0,
+        'MIN_Z' : -185.0,
+        'MAX_Z' : 1185.0,
+        'MIN_LNQ' :  1.0,
+        'MAX_LNQ' : 10.2
     }
 
     RNG = np.random.default_rng()
 
+
     # Process
-    process_file(MG_FILE_PATH, MG_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS, N_COMPLETE, RNG, RANGES)
-    process_file(O_FILE_PATH, O_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS, N_COMPLETE, RNG, RANGES)
+    process_file(MG_FILE_PATH, MG_SAVE_PATH, MIN_N_POINTS, MAX_N_POINTS,N_COMPLETE,RNG,RANGES)
 
     # Split and sort
-    train, val, test = get_ttv_split(MG_SAVE_PATH, O_SAVE_PATH)
+    train, val, test = get_ttv_split(MG_SAVE_PATH)
     train = np.sort(train, order='experiment')
     val = np.sort(val, order='experiment')
     test = np.sort(test, order='experiment')
     make_category_file(train, val, test, CATEGORY_FILE_PATH)
-    sort_files(MG_SAVE_PATH, O_SAVE_PATH, FINAL_PATH, train, val, test)
+    sort_files(MG_SAVE_PATH, FINAL_PATH, train, val, test)
 
     # Cut
     create_partial_clouds(FINAL_PATH)

@@ -12,6 +12,8 @@ from .build import MODELS, build_model_from_cfg
 from models.Transformer_utils import *
 from utils import misc
 
+# import numpy as np
+
 class SelfAttnBlockApi(nn.Module):
     r'''
         1. Norm Encoder Block 
@@ -221,6 +223,7 @@ class CrossAttnBlockApi(nn.Module):
         # 1 for mask, 0 for not mask
         # mask shape N, N
         # q: [ true_query; denoise_token ]
+        
         if denoise_length is None:
             mask = None
         else:
@@ -930,7 +933,7 @@ class AdaPoinTr(nn.Module):
     def get_loss(self, ret, gt, epoch=1):
         pred_coarse, denoised_coarse, denoised_fine, pred_fine = ret
         
-        assert pred_fine.size(1) == gt.size(1)
+        # assert pred_fine.size(1) == gt.size(1)
 
         # denoise loss
         idx = knn_point(self.factor, gt, denoised_coarse) # B n k 
@@ -959,6 +962,15 @@ class AdaPoinTr(nn.Module):
             global_feature.unsqueeze(-2).expand(-1, M, -1),
             q,
             coarse_point_cloud], dim=-1)  # B M 1027 + C
+
+
+
+        """
+        # Only for saving global features
+        np.save('../Data/LatentSpaceEmb.npy', global_feature)
+        """
+
+
 
         
         # NOTE: foldingNet

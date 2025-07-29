@@ -2,9 +2,9 @@
 
 ### Job Parameters:
 # basic info
-#SBATCH --job-name "train_A"               # name
-#SBATCH --output "train_A-out.log"      # output file
-#SBATCH --error "train_A-err.log"       # error message file
+#SBATCH --job-name "CHECK_GPU"               # name
+#SBATCH --output "CHECK_GPU-out.log"      # output file
+#SBATCH --error "CHECK_GPU-err.log"       # error message file
 
 # resource request info 
 #SBATCH --gres=gpu:1
@@ -15,9 +15,10 @@
 #SBATCH --mail-type ALL
 #SBATCH --mail-user hayavuzkara@davidson.edu
 
+nvidia-smi
+
 source /opt/conda/bin/activate env1
 
 export TORCH_CUDA_ARCH_LIST="8.6"
 
-
-python main.py --config cfgs/ALPHA_ATTPC/ALPHA.yaml --exp_name ATTPC
+python check.py
